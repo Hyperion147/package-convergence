@@ -1,9 +1,11 @@
-export interface OklchColor {
-  l: number;
-  c: number;
-  h: number;
+import * as react_jsx_runtime from 'react/jsx-runtime';
+
+interface OklchColor {
+    l: number;
+    c: number;
+    h: number;
 }
-export interface ThemeConfig {
+interface ThemeConfig {
     background: OklchColor;
     foreground: OklchColor;
     card: OklchColor;
@@ -37,5 +39,25 @@ export interface ThemeConfig {
     'sidebar-border': OklchColor;
     'sidebar-ring': OklchColor;
 }
+type ThemeKey = keyof ThemeConfig;
 
-export type ThemeKey = keyof ThemeConfig;
+declare const INITIAL_THEME: ThemeConfig;
+
+interface ConvergenceProps {
+    initialConfig?: ThemeConfig;
+    className?: string;
+}
+declare function Convergence({ initialConfig, className, }: ConvergenceProps): react_jsx_runtime.JSX.Element;
+
+declare class ConvergenceEngine {
+    private config;
+    constructor(initialConfig: ThemeConfig);
+    /**
+     * Updates a specific color and injects it into the DOM
+     */
+    setOklch(key: ThemeKey, color: Partial<OklchColor>): void;
+    applyFullTheme(config: ThemeConfig): void;
+    getConfig(): ThemeConfig;
+}
+
+export { Convergence, ConvergenceEngine, INITIAL_THEME, type OklchColor, type ThemeConfig, type ThemeKey };

@@ -1,8 +1,12 @@
+"use client";
+
 import { ThemeConfig, OklchColor, ThemeKey } from './types';
 
 export * from './types';
+export * from './defaults';
+export * from './components/Convergence';
 
-export class Convergence {
+export class ConvergenceEngine {
   private config: ThemeConfig;
 
   constructor(initialConfig: ThemeConfig) {
@@ -23,16 +27,19 @@ export class Convergence {
     
     const { l, c, h } = this.config[key];
     
-    const cssValue = `${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(2)}`;
+    const cssValue = `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${h.toFixed(3)})`;
     
-    document.documentElement.style.setProperty(`--${key}`, cssValue);
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.setProperty(`--${key}`, cssValue);
+    }
   }
 
   public applyFullTheme(config: ThemeConfig): void {
+    if (typeof document === 'undefined') return;
     this.config = config;
     (Object.keys(config) as ThemeKey[]).forEach((key) => {
       const { l, c, h } = config[key];
-      const cssValue = `${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(2)}`;
+    const cssValue = `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${h.toFixed(3)})`;
       document.documentElement.style.setProperty(`--${key}`, cssValue);
     });
   }
