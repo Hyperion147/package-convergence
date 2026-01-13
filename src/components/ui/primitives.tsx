@@ -1,14 +1,83 @@
 import React, { forwardRef } from "react";
 
+const STYLES = {
+  input: {
+    display: "flex !important",
+    boxSizing: "border-box !important",
+    height: "36px !important",
+    width: "100% !important",
+    borderRadius: "6px !important",
+    border: "1px solid #3f3f46 !important", // zinc-700
+    backgroundColor: "rgba(24, 24, 27, 0.5) !important", // zinc-950/50
+    padding: "4px 12px !important",
+    fontSize: "14px !important",
+    lineHeight: "20px !important",
+    color: "#e4e4e7 !important", // zinc-200
+    outline: "none !important",
+    fontFamily: "ui-sans-serif, system-ui, sans-serif !important",
+    margin: "0 !important",
+  },
+  button: {
+    base: {
+      display: "inline-flex !important",
+      boxSizing: "border-box !important",
+      alignItems: "center !important",
+      justifyContent: "center !important",
+      whiteSpace: "nowrap !important",
+      borderRadius: "6px !important",
+      fontSize: "14px !important",
+      lineHeight: "20px !important",
+      fontWeight: "500 !important",
+      height: "36px !important",
+      padding: "0 16px !important",
+      cursor: "pointer !important",
+      transition: "all 0.2s !important",
+      outline: "none !important",
+      fontFamily: "ui-sans-serif, system-ui, sans-serif !important",
+      margin: "0 !important",
+      textTransform: "none !important",
+    },
+    default: {
+      backgroundColor: "#fafafa !important", // zinc-50
+      color: "#18181b !important", // zinc-900
+      border: "none !important",
+    },
+    outline: {
+      backgroundColor: "transparent !important",
+      border: "1px solid #3f3f46 !important",
+      color: "#e4e4e7 !important",
+    },
+    ghost: {
+      backgroundColor: "transparent !important",
+      border: "none !important",
+      color: "#e4e4e7 !important",
+    },
+    icon: {
+      height: "36px !important",
+      width: "36px !important",
+      padding: "0 !important",
+    },
+  },
+  label: {
+    fontSize: "14px !important",
+    lineHeight: "20px !important",
+    fontWeight: "500 !important",
+    color: "#e4e4e7 !important",
+    marginBottom: "4px !important",
+    display: "block !important",
+    fontFamily: "ui-sans-serif, system-ui, sans-serif !important",
+  },
+} as const;
+
 export const Label = forwardRef<
   HTMLLabelElement,
   React.LabelHTMLAttributes<HTMLLabelElement>
->(({ className, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => (
   <label
     ref={ref}
-    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-200 ${
-      className || ""
-    }`}
+    // @ts-ignore
+    style={{ ...STYLES.label, ...style }}
+    className={className}
     {...props}
   />
 ));
@@ -17,13 +86,12 @@ Label.displayName = "Label";
 export const Input = forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(({ className, type, ...props }, ref) => {
+>(({ className, style, ...props }, ref) => {
   return (
     <input
-      type={type}
-      className={`flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 ${
-        className || ""
-      }`}
+      // @ts-ignore
+      style={{ ...STYLES.input, ...style }}
+      className={className}
       ref={ref}
       {...props}
     />
@@ -36,23 +104,18 @@ export const Button = forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: "default" | "outline" | "ghost" | "icon";
   }
->(({ className, variant = "default", ...props }, ref) => {
-  const variants = {
-    default:
-      "bg-zinc-900 text-zinc-50 hover:bg-zinc-900/90 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90 shadow",
-    outline:
-      "border border-zinc-200 bg-transparent shadow-sm hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-800",
-    ghost:
-      "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50",
-    icon: "h-9 w-9 p-0",
-  };
+>(({ className, variant = "default", style, ...props }, ref) => {
+  const variantStyles =
+    variant === "icon"
+      ? { ...STYLES.button.base, ...STYLES.button.ghost, ...STYLES.button.icon }
+      : { ...STYLES.button.base, ...STYLES.button[variant] };
 
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 h-9 px-4 py-2 ${
-        variants[variant]
-      } ${className || ""}`}
+      // @ts-ignore
+      style={{ ...variantStyles, ...style }}
+      className={className}
       {...props}
     />
   );

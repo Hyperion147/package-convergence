@@ -6,6 +6,7 @@ import { ThemeConfig, ThemeKey, OklchColor } from "../types";
 import { INITIAL_THEME } from "../defaults";
 import { convertHexToOklch, convertOklchToHex } from "../utils/color";
 import { Input, Label, Button } from "./ui/primitives";
+import { Copy, X, Undo, Redo } from "lucide-react";
 
 interface ConvergenceProps {
   initialConfig?: ThemeConfig;
@@ -52,70 +53,6 @@ const GROUPS = {
 
 // Simple icon components to avoid external deps
 const Icons = {
-  Close: () => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 15 15"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.1929 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.1929 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-        fill="currentColor"
-        fillRule="evenodd"
-        clipRule="evenodd"
-      ></path>
-    </svg>
-  ),
-  Copy: () => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 15 15"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M1 9.50006C1 10.3285 1.67157 11.0001 2.5 11.0001H4L4 10.0001H2.5C2.22386 10.0001 2 9.7762 2 9.50006L2 2.50006C2 2.22392 2.22386 2.00006 2.5 2.00006L9.5 2.00006C9.77614 2.00006 10 2.22392 10 2.50006V4.00006H11V2.50006C11 1.67163 10.3284 1.00006 9.5 1.00006L2.5 1.00006C1.67157 1.00006 1 1.67163 1 2.50006V9.50006ZM5 5.50006C5 4.67163 5.67157 4.00006 6.5 4.00006H12.5C13.3284 4.00006 14 4.67163 14 5.50006V12.5001C14 13.3285 13.3284 14.0001 12.5 14.0001H6.5C5.67157 14.0001 5 13.3285 5 12.5001V5.50006ZM6.5 5.00006H12.5C12.7761 5.00006 13 5.22392 13 5.50006V12.5001C13 12.7762 12.7761 13.0001 12.5 13.0001H6.5C6.22386 13.0001 6 12.7762 6 12.5001V5.50006C6 5.22392 6.22386 5.00006 6.5 5.00006Z"
-        fill="currentColor"
-        fillRule="evenodd"
-        clipRule="evenodd"
-      ></path>
-    </svg>
-  ),
-  Undo: () => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 15 15"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M4.85355 2.14645C5.04882 2.34171 5.04882 2.65829 4.85355 2.85355L3.70711 4H9C11.4853 4 13.5 6.01472 13.5 8.5C13.5 10.9853 11.4853 13 9 13H5C4.72386 13 4.5 12.7761 4.5 12.5C4.5 12.2239 4.72386 12 5 12H9C10.933 12 12.5 10.433 12.5 8.5C12.5 6.567 10.933 5 9 5H3.70711L4.85355 6.14645C5.04882 6.34171 5.04882 6.65829 4.85355 6.85355C4.65829 7.04882 4.34171 7.04882 4.14645 6.85355L2.14645 4.85355C1.95118 4.65829 1.95118 4.34171 2.14645 4.14645L4.14645 2.14645C4.34171 1.95118 4.65829 1.95118 4.85355 2.14645Z"
-        fill="currentColor"
-        fillRule="evenodd"
-        clipRule="evenodd"
-      ></path>
-    </svg>
-  ),
-  Redo: () => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 15 15"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M10.1464 2.14645C9.95118 2.34171 9.95118 2.65829 10.1464 2.85355L11.2929 4H6C3.51472 4 1.5 6.01472 1.5 8.5C1.5 10.9853 3.51472 13 6 13H10C10.2761 13 10.5 12.7761 10.5 12.5C10.5 12.2239 10.2761 12 10 12H6C4.067 12 2.5 10.433 2.5 8.5C2.5 6.567 4.067 5 6 5H11.2929L10.1464 6.14645C9.95118 6.34171 9.95118 6.65829 10.1464 6.85355C10.3417 7.04882 10.6583 7.04882 10.8536 6.85355L12.8536 4.85355C13.0488 4.65829 13.0488 4.34171 12.8536 4.14645L10.8536 2.14645C10.6583 1.95118 10.3417 1.95118 10.1464 2.14645Z"
-        fill="currentColor"
-        fillRule="evenodd"
-        clipRule="evenodd"
-      ></path>
-    </svg>
-  ),
   Reset: () => (
     <svg
       width="15"
@@ -218,6 +155,128 @@ const Icons = {
     </svg>
   ),
 };
+const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
+  wrapperOpen: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    display: "flex",
+    justifyContent: "flex-end",
+    pointerEvents: "none",
+  },
+  backdrop: {
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    pointerEvents: "auto",
+    transition: "opacity 300ms",
+  },
+  panel: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "420px",
+    height: "100dvh",
+    backgroundColor: "#18181b", // zinc-950
+    borderLeft: "1px solid #27272a", // zinc-800
+    boxShadow: "-10px 0 40px -15px rgba(0,0,0,0.3)",
+    pointerEvents: "auto",
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    color: "#f4f4f5", // zinc-100
+    boxSizing: "border-box",
+  },
+  header: {
+    padding: "16px 20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottom: "1px solid #27272a", // zinc-800
+    backgroundColor: "#09090b", // zinc-950
+    boxSizing: "border-box",
+  },
+  content: {
+    padding: "20px",
+    overflowY: "auto",
+    flex: 1,
+    backgroundColor: "rgba(9, 9, 11, 0.5)", // zinc-950/50
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+    boxSizing: "border-box",
+  },
+  triggerButton: {
+    position: "fixed",
+    bottom: "24px",
+    right: "24px",
+    zIndex: 9999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "56px",
+    height: "56px",
+    backgroundColor: "#18181b",
+    color: "white",
+    borderRadius: "9999px",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    cursor: "pointer",
+    transition: "transform 0.2s",
+    boxSizing: "border-box",
+    padding: 0,
+    margin: 0,
+  },
+  section: {
+    backgroundColor: "#09090b", // zinc-900
+    border: "1px solid #27272a", // zinc-800
+    borderRadius: "8px",
+    overflow: "hidden",
+    boxSizing: "border-box",
+  },
+  sectionHeader: {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    backgroundColor: "rgba(24, 24, 27, 0.5)",
+    cursor: "pointer",
+    border: "none",
+    color: "#f4f4f5",
+    transition: "background-color 0.2s",
+    outline: "none",
+    boxSizing: "border-box",
+    margin: 0,
+  },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontSize: "12px",
+  },
+  colorPreview: {
+    position: "relative",
+    width: "40px",
+    height: "36px",
+    borderRadius: "6px",
+    border: "1px solid #27272a",
+    overflow: "hidden",
+    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    flexShrink: 0,
+    boxSizing: "border-box",
+  },
+  colorInput: {
+    position: "absolute",
+    inset: 0,
+    opacity: 0,
+    width: "100%",
+    height: "100%",
+    cursor: "pointer",
+    padding: 0,
+    margin: 0,
+    border: "none",
+  },
+};
 
 export function Convergence({
   initialConfig = INITIAL_THEME,
@@ -316,92 +375,105 @@ export function Convergence({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-[9999] group flex items-center justify-center w-14 h-14 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 active:scale-95 border border-white/10"
+        style={COMPONENT_STYLES.triggerButton}
         title="Open Theme Generator"
+        className="group hover:scale-105 active:scale-95" // keeping minimal scale transforms via class if helpful, but styles handle base
       >
-        <span className="text-2xl">🎨</span>
+        <span style={{ fontSize: "24px", lineHeight: 1 }}>🎨</span>
       </button>
     );
   }
 
   return (
-    <div
-      className={`fixed inset-0 z-[9999] flex justify-end pointer-events-none ${
-        className || ""
-      }`}
-    >
-      <div
-        className="absolute inset-0 bg-black/20 pointer-events-auto transition-opacity duration-300"
-        onClick={() => setIsOpen(false)}
-      />
+    <div style={COMPONENT_STYLES.wrapperOpen} className={className || ""}>
+      <div style={COMPONENT_STYLES.backdrop} onClick={() => setIsOpen(false)} />
 
-      <div className="relative w-full max-w-[420px] h-[100dvh] bg-zinc-50 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl pointer-events-auto flex flex-col font-sans text-zinc-900 dark:text-zinc-100 animate-in slide-in-from-right duration-500 shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.1)]">
+      <div style={COMPONENT_STYLES.panel}>
         {/* Header */}
-        <div className="px-5 py-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <span className="font-bold text-base tracking-tight">
+        <div style={COMPONENT_STYLES.header}>
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: "16px",
+              letterSpacing: "-0.01em",
+            }}
+          >
             Theme Generator
           </span>
           <button
             onClick={() => setIsOpen(false)}
-            className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 p-1"
+            style={{
+              color: "#a1a1aa",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+            }}
           >
-            <Icons.Close />
+            <X />
           </button>
         </div>
 
         {/* Actions Area */}
-        <div className="p-5 space-y-5 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950/50">
-          {/* Copy Button */}
+        <div style={COMPONENT_STYLES.content}>
           <Button
-            className="w-full gap-2 text-sm h-10 shadow-sm border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            style={{ width: "100%", gap: "8px", height: "40px" }}
             variant="outline"
             onClick={handleExport}
           >
-            <Icons.Copy /> Copy
+            <Copy /> Copy CSS Variables
           </Button>
 
           {/* History Controls */}
-          <div className="flex gap-2">
+          <div style={{ display: "flex", gap: "8px" }}>
             <Button
               variant="outline"
-              className="flex-1 bg-white dark:bg-zinc-900 h-9 gap-2"
+              style={{ flex: 1, gap: "8px" }}
               onClick={handleUndo}
               disabled={historyIndex === 0}
             >
-              <Icons.Undo />
+              <Undo />
             </Button>
             <Button
               variant="outline"
-              className="flex-1 bg-white dark:bg-zinc-900 h-9 gap-2"
+              style={{ flex: 1, gap: "8px" }}
               onClick={handleRedo}
               disabled={historyIndex === history.length - 1}
             >
-              <Icons.Redo />
+              <Redo />
             </Button>
             <Button
               variant="outline"
-              className="flex-[2] bg-white dark:bg-zinc-900 h-9 gap-2"
+              style={{ flex: 2, gap: "8px" }}
               onClick={handleReset}
             >
               <Icons.Reset /> Reset
             </Button>
           </div>
 
-          {/* Mode Toggle */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-              Mode
-            </Label>
-            <div className="flex gap-2">
+          {/* Mode Toggle (Visual Only for now) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <Label>Mode</Label>
+            <div style={{ display: "flex", gap: "8px" }}>
               <Button
                 variant="outline"
-                className="flex-1 justify-start gap-2 bg-white dark:bg-zinc-900 font-normal h-9"
+                style={{
+                  flex: 1,
+                  justifyContent: "flex-start",
+                  gap: "8px",
+                  fontWeight: 400,
+                }}
               >
                 <Icons.Sun /> Light
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 justify-start gap-2 bg-white dark:bg-zinc-900 font-normal h-9"
+                style={{
+                  flex: 1,
+                  justifyContent: "flex-start",
+                  gap: "8px",
+                  fontWeight: 400,
+                }}
               >
                 <Icons.Moon /> Dark
               </Button>
@@ -409,20 +481,30 @@ export function Convergence({
           </div>
 
           {/* Themes Actions */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-              Themes
-            </Label>
-            <div className="flex gap-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <Label>Themes</Label>
+            <div style={{ display: "flex", gap: "8px" }}>
               <Button
                 variant="outline"
-                className="flex-1 justify-start gap-2 bg-white dark:bg-zinc-900 font-normal h-9 text-xs px-2"
+                style={{
+                  flex: 1,
+                  justifyContent: "flex-start",
+                  gap: "8px",
+                  fontWeight: 400,
+                  fontSize: "12px",
+                }}
               >
                 <Icons.Import /> Import
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 justify-start gap-2 bg-white dark:bg-zinc-900 font-normal h-9 text-xs px-2"
+                style={{
+                  flex: 1,
+                  justifyContent: "flex-start",
+                  gap: "8px",
+                  fontWeight: 400,
+                  fontSize: "12px",
+                }}
               >
                 <Icons.Random /> Random
               </Button>
@@ -430,43 +512,97 @@ export function Convergence({
           </div>
 
           {/* Tabs */}
-          <div className="flex p-1 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-lg">
-            <button className="flex-1 py-1 text-xs font-medium bg-white dark:bg-zinc-900 shadow-sm rounded-md text-zinc-900 dark:text-zinc-100">
+          <div
+            style={{
+              display: "flex",
+              padding: "4px",
+              backgroundColor: "rgba(255,255,255,0.05)",
+              borderRadius: "8px",
+            }}
+          >
+            <button
+              style={{
+                flex: 1,
+                padding: "4px 0",
+                fontSize: "12px",
+                fontWeight: 500,
+                backgroundColor: "#09090b",
+                borderRadius: "6px",
+                color: "#f4f4f5",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
               Colors
             </button>
-            <button className="flex-1 py-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            <button
+              style={{
+                flex: 1,
+                padding: "4px 0",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: "#a1a1aa",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
               Typography
             </button>
-            <button className="flex-1 py-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            <button
+              style={{
+                flex: 1,
+                padding: "4px 0",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: "#a1a1aa",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
               Other
             </button>
           </div>
 
           {/* Colors List */}
-          <div className="space-y-4">
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
             {Object.entries(GROUPS).map(([groupName, keys]) => {
               const isCollapsed = collapsedGroups[groupName];
               return (
-                <div
-                  key={groupName}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm"
-                >
+                <div key={groupName} style={COMPONENT_STYLES.section}>
                   <button
                     onClick={() => toggleGroup(groupName)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors"
+                    style={COMPONENT_STYLES.sectionHeader}
                   >
-                    <span className="font-semibold text-sm">{groupName}</span>
+                    <span style={{ fontWeight: 600, fontSize: "14px" }}>
+                      {groupName}
+                    </span>
                     <span
-                      className={`transition-transform duration-200 ${
-                        isCollapsed ? "" : "rotate-180"
-                      } text-zinc-400`}
+                      style={{
+                        transition: "transform 0.2s",
+                        transform: isCollapsed
+                          ? "rotate(0deg)"
+                          : "rotate(180deg)",
+                        color: "#a1a1aa",
+                        display: "flex",
+                      }}
                     >
                       <Icons.ChevronDown />
                     </span>
                   </button>
 
                   {!isCollapsed && (
-                    <div className="p-4 space-y-6">
+                    <div
+                      style={{
+                        padding: "16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "24px",
+                      }}
+                    >
                       {keys.map((key) => {
                         const themeKey = key as ThemeKey;
                         const color = theme[themeKey];
@@ -477,20 +613,41 @@ export function Convergence({
                         )} ${color.c.toFixed(2)} ${color.h.toFixed(2)})`;
 
                         return (
-                          <div key={key} className="space-y-2">
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="font-medium capitalize text-zinc-700 dark:text-zinc-300">
+                          <div
+                            key={key}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "8px",
+                            }}
+                          >
+                            <div style={COMPONENT_STYLES.row}>
+                              <span
+                                style={{
+                                  fontWeight: 500,
+                                  textTransform: "capitalize",
+                                  color: "#e4e4e7",
+                                }}
+                              >
                                 {key.replace(/-/g, " ")}
                               </span>
-                              <span className="text-zinc-400 font-mono">
+                              <span
+                                style={{
+                                  fontFamily: "monospace",
+                                  color: "#a1a1aa",
+                                }}
+                              >
                                 {hexValue}
                               </span>
                             </div>
-                            <div className="flex gap-2">
-                              <div className="relative w-10 h-9 rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-sm shrink-0">
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <div style={COMPONENT_STYLES.colorPreview}>
                                 <div
-                                  className="absolute inset-0"
-                                  style={{ backgroundColor: hexValue }}
+                                  style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    backgroundColor: hexValue,
+                                  }}
                                 />
                                 <input
                                   type="color"
@@ -498,7 +655,7 @@ export function Convergence({
                                   onChange={(e) =>
                                     updateColorFromHex(themeKey, e.target.value)
                                   }
-                                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                  style={COMPONENT_STYLES.colorInput}
                                 />
                               </div>
                               <Input
@@ -509,7 +666,13 @@ export function Convergence({
                                     e.target.value
                                   )
                                 }
-                                className="font-mono text-xs h-9 bg-zinc-50 dark:bg-zinc-950/50 text-zinc-600 dark:text-zinc-400"
+                                style={{
+                                  fontFamily: "monospace",
+                                  fontSize: "12px",
+                                  height: "36px",
+                                  backgroundColor: "rgba(9, 9, 11, 0.5)",
+                                  color: "#a1a1aa",
+                                }}
                               />
                             </div>
                           </div>

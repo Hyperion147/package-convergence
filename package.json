@@ -33,7 +33,6 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Hyperion147/package-convergence.git"
@@ -42,5 +41,8 @@
   "bugs": {
     "url": "https://github.com/Hyperion147/package-convergence/issues"
   },
-  "homepage": "https://github.com/Hyperion147/package-convergence#readme"
+  "homepage": "https://github.com/Hyperion147/package-convergence#readme",
+  "dependencies": {
+    "lucide-react": "^0.562.0"
+  }
 }
