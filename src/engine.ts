@@ -1,53 +1,43 @@
-export interface OklchColor {
-    l: number;
-    c: number;
-    h: number;
-}
+import { ThemeConfig, OklchColor, ThemeKey } from './types';
 
-export interface ThemeConfig {
-    background: OklchColor;
-    foreground: OklchColor;
-    primary: OklchColor;
-    // // primary-foreground: ;
-    // secondary: OklchColor;
-    // // secondary-foreground: oklch(0.35 0.07 41.41);
-    // muted: OklchColor;
-    // // muted-foreground: oklch(0.50 0 0);
-    // accent: OklchColor;
-    // // accent-foreground: oklch(0.24 0 0);
-    // destructive: OklchColor;
-    // border: OklchColor;
-}
+export * from './types';
 
-export class ThemeManager {
-    private config: ThemeConfig;
+export class Convergence {
+  private config: ThemeConfig;
 
-    constructor(initialConfig: ThemeConfig) {
-        this.config = initialConfig;
-        this.applyAll();
+  constructor(initialConfig: ThemeConfig) {
+    this.config = initialConfig;
+    this.applyFullTheme(initialConfig);
+  }
+
+  /**
+   * Updates a specific color and injects it into the DOM
+   */
+  public setOklch(key: ThemeKey, color: Partial<OklchColor>): void {
+    if (!this.config[key]) {
+      console.warn(`Theme key "${key}" does not exist.`);
+      return;
     }
 
-    updateColor(key: keyof ThemeConfig, values: Partial<OklchColor>) {
-        this.config[key] = { ...this.config[key], ...values };
-        const { l, c, h } = this.config[key];
+    this.config[key] = { ...this.config[key], ...color };
+    
+    const { l, c, h } = this.config[key];
+    
+    const cssValue = `${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(2)}`;
+    
+    document.documentElement.style.setProperty(`--${key}`, cssValue);
+  }
 
-        document.documentElement.style.setProperty(
-            `--${key}`,
-            `${l.toFixed(3)} ${h.toFixed(3)} ${h.toFixed(1)}`
-        );
-    }
-
-    private applyAll() {
-        (Object.keys(this.config) as Array<keyof ThemeConfig>).forEach(
-            (key) => {
-                this.updateColor(key, {});
-            }
-        );
-    }
-
-    generateCSS(): string {
-        return `:root {\n${Object.entries(this.config)
-            .map(([key, { l, c, h }]) => ` --${key}: ${l} ${c} ${h};`)
-            .join("\n")}\n}`;
-    }
+  public applyFullTheme(config: ThemeConfig): void {
+    this.config = config;
+    (Object.keys(config) as ThemeKey[]).forEach((key) => {
+      const { l, c, h } = config[key];
+      const cssValue = `${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(2)}`;
+      document.documentElement.style.setProperty(`--${key}`, cssValue);
+    });
+  }
+  
+  public getConfig(): ThemeConfig {
+    return { ...this.config };
+  }
 }
