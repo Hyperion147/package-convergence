@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeConfig, OklchColor, ThemeKey } from './types';
+import { parseCssColor } from './utils/color';
 
 export * from './types';
 export * from './defaults';
@@ -9,9 +10,31 @@ export * from './components/Convergence';
 export class ConvergenceEngine {
   private config: ThemeConfig;
 
-  constructor(initialConfig: ThemeConfig) {
+  constructor(initialConfig: ThemeConfig, options: { autoApply?: boolean } = { autoApply: true }) {
     this.config = initialConfig;
-    this.applyFullTheme(initialConfig);
+    if (options.autoApply) {
+      this.applyFullTheme(initialConfig);
+    }
+  }
+
+  public syncFromDom(): ThemeConfig {
+    if (typeof document === 'undefined') return { ...this.config };
+    
+    const computed = getComputedStyle(document.documentElement);
+    const newConfig = { ...this.config };
+    
+    (Object.keys(newConfig) as ThemeKey[]).forEach(key => {
+        const val = computed.getPropertyValue(`--${key}`);
+        if (val) {
+            const parsed = parseCssColor(val);
+            if (parsed) {
+                newConfig[key] = parsed;
+            }
+        }
+    });
+    
+    this.config = newConfig;
+    return newConfig;
   }
 
   /**

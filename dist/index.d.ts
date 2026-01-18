@@ -42,16 +42,22 @@ interface ThemeConfig {
 type ThemeKey = keyof ThemeConfig;
 
 declare const INITIAL_THEME: ThemeConfig;
+declare const DARK_THEME: ThemeConfig;
+declare const PRESETS: Record<string, ThemeConfig>;
 
 interface ConvergenceProps {
     initialConfig?: ThemeConfig;
     className?: string;
+    syncStart?: boolean;
 }
-declare function Convergence({ initialConfig, className, }: ConvergenceProps): react_jsx_runtime.JSX.Element;
+declare function Convergence({ initialConfig, className, syncStart, }: ConvergenceProps): react_jsx_runtime.JSX.Element;
 
 declare class ConvergenceEngine {
     private config;
-    constructor(initialConfig: ThemeConfig);
+    constructor(initialConfig: ThemeConfig, options?: {
+        autoApply?: boolean;
+    });
+    syncFromDom(): ThemeConfig;
     /**
      * Updates a specific color and injects it into the DOM
      */
@@ -60,4 +66,4 @@ declare class ConvergenceEngine {
     getConfig(): ThemeConfig;
 }
 
-export { Convergence, ConvergenceEngine, INITIAL_THEME, type OklchColor, type ThemeConfig, type ThemeKey };
+export { Convergence, ConvergenceEngine, DARK_THEME, INITIAL_THEME, type OklchColor, PRESETS, type ThemeConfig, type ThemeKey };

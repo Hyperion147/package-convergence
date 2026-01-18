@@ -1,36 +1,76 @@
 import { ThemeConfig } from './types';
 
 export const INITIAL_THEME: ThemeConfig = {
-    background: { l: 0.9885, c: 0.0057, h: 84.5659 },
-    foreground: { l: 0.3660, c: 0.0251, h: 49.6085 },
-    card: { l: 0.9686, c: 0.0091, h: 78.2818 },
-    'card-foreground': { l: 0.3660, c: 0.0251, h: 49.6085 },
-    popover: { l: 0.9686, c: 0.0091, h: 78.2818 },
-    'popover-foreground': { l: 0.3660, c: 0.0251, h: 49.6085 },
-    primary: { l: 0.5553, c: 0.1455, h: 48.9975 },
-    'primary-foreground': { l: 1.0000, c: 0, h: 0 },
-    secondary: { l: 0.8276, c: 0.0752, h: 74.4400 },
-    'secondary-foreground': { l: 0.4444, c: 0.0096, h: 73.6390 },
-    muted: { l: 0.9363, c: 0.0218, h: 83.2637 },
-    'muted-foreground': { l: 0.5534, c: 0.0116, h: 58.0708 },
-    accent: { l: 0.9000, c: 0.0500, h: 74.9889 },
-    'accent-foreground': { l: 0.4444, c: 0.0096, h: 73.6390 },
-    destructive: { l: 0.4437, c: 0.1613, h: 26.8994 },
-    'destructive-foreground': { l: 1.0000, c: 0, h: 0 },
-    border: { l: 0.8866, c: 0.0404, h: 89.6994 },
-    input: { l: 0.8866, c: 0.0404, h: 89.6994 },
-    ring: { l: 0.5553, c: 0.1455, h: 48.9975 },
-    'chart-1': { l: 0.5553, c: 0.1455, h: 48.9975 },
-    'chart-2': { l: 0.5534, c: 0.0116, h: 58.0708 },
-    'chart-3': { l: 0.5538, c: 0.1207, h: 66.4416 },
-    'chart-4': { l: 0.5534, c: 0.0116, h: 58.0708 },
-    'chart-5': { l: 0.6806, c: 0.1423, h: 75.8340 },
-    sidebar: { l: 0.9363, c: 0.0218, h: 83.2637 },
-    'sidebar-foreground': { l: 0.3660, c: 0.0251, h: 49.6085 },
-    'sidebar-primary': { l: 0.5553, c: 0.1455, h: 48.9975 },
-    'sidebar-primary-foreground': { l: 1.0000, c: 0, h: 0 },
-    'sidebar-accent': { l: 0.5538, c: 0.1207, h: 66.4416 },
-    'sidebar-accent-foreground': { l: 1.0000, c: 0, h: 0 },
-    'sidebar-border': { l: 0.8866, c: 0.0404, h: 89.6994 },
-    'sidebar-ring': { l: 0.5553, c: 0.1455, h: 48.9975 }
+    background: { l: 0.99, c: 0, h: 0 },
+    foreground: { l: 0.1, c: 0.01, h: 260 }, // deep zinc
+    card: { l: 1.0, c: 0, h: 0 },
+    'card-foreground': { l: 0.1, c: 0.01, h: 260 },
+    popover: { l: 1.0, c: 0, h: 0 },
+    'popover-foreground': { l: 0.1, c: 0.01, h: 260 },
+    primary: { l: 0.2, c: 0.0, h: 0 }, // neutral black primary
+    'primary-foreground': { l: 0.99, c: 0, h: 0 },
+    secondary: { l: 0.96, c: 0.0, h: 0 },
+    'secondary-foreground': { l: 0.2, c: 0, h: 0 },
+    muted: { l: 0.96, c: 0.0, h: 0 },
+    'muted-foreground': { l: 0.45, c: 0.01, h: 260 },
+    accent: { l: 0.96, c: 0.0, h: 0 },
+    'accent-foreground': { l: 0.2, c: 0, h: 0 },
+    destructive: { l: 0.5, c: 0.2, h: 25 },
+    'destructive-foreground': { l: 0.99, c: 0, h: 0 },
+    border: { l: 0.92, c: 0.0, h: 0 },
+    input: { l: 0.92, c: 0.0, h: 0 },
+    ring: { l: 0.2, c: 0.0, h: 0 }, // matches primary
+    'chart-1': { l: 0.6, c: 0.15, h: 25 },  // Orange
+    'chart-2': { l: 0.55, c: 0.12, h: 170 }, // Teal
+    'chart-3': { l: 0.35, c: 0.15, h: 270 }, // Navy/Blue
+    'chart-4': { l: 0.7, c: 0.15, h: 80 },   // Yellow/Lime
+    'chart-5': { l: 0.55, c: 0.15, h: 320 }, // Pink
+    sidebar: { l: 0.98, c: 0.0, h: 0 },
+    'sidebar-foreground': { l: 0.2, c: 0.01, h: 260 },
+    'sidebar-primary': { l: 0.2, c: 0.0, h: 0 },
+    'sidebar-primary-foreground': { l: 0.99, c: 0.0, h: 0 },
+    'sidebar-accent': { l: 0.95, c: 0.0, h: 0 },
+    'sidebar-accent-foreground': { l: 0.2, c: 0.0, h: 0 },
+    'sidebar-border': { l: 0.92, c: 0.0, h: 0 },
+    'sidebar-ring': { l: 0.8, c: 0.0, h: 0 }
 } as ThemeConfig;
+
+export const DARK_THEME: ThemeConfig = {
+    background: { l: 0.09, c: 0.0, h: 0 },
+    foreground: { l: 0.98, c: 0.0, h: 0 },
+    card: { l: 0.12, c: 0.0, h: 0 },
+    'card-foreground': { l: 0.98, c: 0.0, h: 0 },
+    popover: { l: 0.12, c: 0.0, h: 0 },
+    'popover-foreground': { l: 0.98, c: 0.0, h: 0 },
+    primary: { l: 0.98, c: 0.0, h: 0 },
+    'primary-foreground': { l: 0.09, c: 0.0, h: 0 },
+    secondary: { l: 0.15, c: 0.02, h: 260 },
+    'secondary-foreground': { l: 0.98, c: 0.0, h: 0 },
+    muted: { l: 0.15, c: 0.02, h: 260 },
+    'muted-foreground': { l: 0.65, c: 0.01, h: 260 },
+    accent: { l: 0.15, c: 0.02, h: 260 },
+    'accent-foreground': { l: 0.98, c: 0.0, h: 0 },
+    destructive: { l: 0.3, c: 0.1, h: 25 },
+    'destructive-foreground': { l: 0.98, c: 0.0, h: 0 },
+    border: { l: 0.15, c: 0.02, h: 260 },
+    input: { l: 0.15, c: 0.02, h: 260 },
+    ring: { l: 0.8, c: 0.0, h: 0 },
+    'chart-1': { l: 0.4, c: 0.15, h: 220 },
+    'chart-2': { l: 0.4, c: 0.15, h: 180 },
+    'chart-3': { l: 0.4, c: 0.15, h: 30 },
+    'chart-4': { l: 0.4, c: 0.15, h: 280 },
+    'chart-5': { l: 0.4, c: 0.15, h: 340 },
+    sidebar: { l: 0.1, c: 0.0, h: 0 },
+    'sidebar-foreground': { l: 0.98, c: 0.0, h: 0 },
+    'sidebar-primary': { l: 0.4, c: 0.15, h: 220 },
+    'sidebar-primary-foreground': { l: 0.98, c: 0.0, h: 0 },
+    'sidebar-accent': { l: 0.15, c: 0.02, h: 260 },
+    'sidebar-accent-foreground': { l: 0.98, c: 0.0, h: 0 },
+    'sidebar-border': { l: 0.15, c: 0.02, h: 260 },
+    'sidebar-ring': { l: 0.8, c: 0.0, h: 0 }
+} as ThemeConfig;
+
+export const PRESETS: Record<string, ThemeConfig> = {
+    "Light": INITIAL_THEME,
+    "Dark": DARK_THEME
+};

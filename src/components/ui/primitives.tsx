@@ -121,3 +121,19 @@ export const Button = forwardRef<
   );
 });
 Button.displayName = "Button";
+
+export const Select = forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement>
+>(({ className, style, ...props }, ref) => {
+  return (
+    <select
+      ref={ref}
+      // @ts-ignore
+      style={{ ...STYLES.input, cursor: "pointer", ...style }}
+      className={className}
+      {...props}
+    />
+  );
+});
+Select.displayName = "Select";

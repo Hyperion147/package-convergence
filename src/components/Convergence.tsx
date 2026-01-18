@@ -3,24 +3,15 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { ConvergenceEngine } from "../index";
 import { ThemeConfig, ThemeKey, OklchColor } from "../types";
-import { INITIAL_THEME } from "../defaults";
+import { INITIAL_THEME, PRESETS } from "../defaults";
 import { convertHexToOklch, convertOklchToHex } from "../utils/color";
-import { Input, Label, Button } from "./ui/primitives";
-import {
-  Copy,
-  X,
-  Undo,
-  Redo,
-  RotateCcw,
-  Sun,
-  Moon,
-  Download,
-  ChevronDown,
-} from "lucide-react";
+import { Input, Label, Button, Select } from "./ui/primitives";
+import { Copy, X, ChevronDown } from "lucide-react";
 
 interface ConvergenceProps {
   initialConfig?: ThemeConfig;
   className?: string;
+  syncStart?: boolean;
 }
 
 const GROUPS = {
@@ -137,6 +128,8 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     display: "flex", // Added
     alignItems: "center", // Added
     justifyContent: "center", // Added
+    border: "1px solid #27272a", // zinc-800
+    padding: "4px 0",
     gap: "8px",
   },
   section: {
@@ -190,42 +183,86 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     margin: 0,
     border: "none",
   },
+  selectTrigger: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    padding: "8px 12px",
+    backgroundColor: "rgba(24, 24, 27, 0.5)",
+    border: "1px solid #3f3f46",
+    borderRadius: "6px",
+    color: "#e4e4e7",
+    fontSize: "14px",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  selectDropdown: {
+    position: "absolute",
+    top: "calc(100% + 4px)",
+    left: 0,
+    right: 0,
+    backgroundColor: "#18181b",
+    border: "1px solid #27272a",
+    borderRadius: "6px",
+    overflow: "hidden",
+    zIndex: 10,
+    display: "flex",
+    flexDirection: "column",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+  },
+  selectItem: {
+    display: "block",
+    width: "100%",
+    padding: "8px 12px",
+    textAlign: "left",
+    backgroundColor: "transparent",
+    border: "none",
+    color: "#e4e4e7",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+  },
 };
 
 export function Convergence({
   initialConfig = INITIAL_THEME,
   className,
+  syncStart = true,
 }: ConvergenceProps) {
   const [theme, setTheme] = useState<ThemeConfig>(initialConfig);
   const [isOpen, setIsOpen] = useState(false);
-  const [history, setHistory] = useState<ThemeConfig[]>([initialConfig]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const [presetsOpen, setPresetsOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] =
+    useState<string>("Select a preset...");
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
 
   const engine = useMemo(() => {
     if (typeof window !== "undefined") {
-      return new ConvergenceEngine(initialConfig);
+      // If syncing from start, do not auto-apply the default theme overwrites
+      return new ConvergenceEngine(initialConfig, { autoApply: !syncStart });
     }
     return null;
-  }, [initialConfig]);
+  }, [initialConfig, syncStart]);
+
+  useEffect(() => {
+    if (syncStart && engine) {
+      // Read current CSS variables from the DOM
+      const currentTheme = engine.syncFromDom();
+      setTheme(currentTheme);
+    }
+  }, [engine, syncStart]);
 
   const updateTheme = useCallback(
-    (newTheme: ThemeConfig, addToHistory = true) => {
+    (newTheme: ThemeConfig) => {
       setTheme(newTheme);
       (Object.keys(newTheme) as ThemeKey[]).forEach((key) => {
         engine?.setOklch(key, newTheme[key]);
       });
-
-      if (addToHistory) {
-        const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push(newTheme);
-        setHistory(newHistory);
-        setHistoryIndex(newHistory.length - 1);
-      }
     },
-    [engine, history, historyIndex]
+    [engine],
   );
 
   const updateColorFromHex = (key: ThemeKey, hex: string) => {
@@ -245,26 +282,6 @@ export function Convergence({
     }
   };
 
-  const handleUndo = () => {
-    if (historyIndex > 0) {
-      const prevTheme = history[historyIndex - 1];
-      setHistoryIndex(historyIndex - 1);
-      updateTheme(prevTheme, false);
-    }
-  };
-
-  const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      const nextTheme = history[historyIndex + 1];
-      setHistoryIndex(historyIndex + 1);
-      updateTheme(nextTheme, false);
-    }
-  };
-
-  const handleReset = () => {
-    updateTheme(initialConfig);
-  };
-
   const toggleGroup = (group: string) => {
     setCollapsedGroups((prev) => ({ ...prev, [group]: !prev[group] }));
   };
@@ -274,9 +291,9 @@ export function Convergence({
       ([key, value]) => {
         if (!value) return "";
         return `  --${key}: oklch(${value.l.toFixed(4)} ${value.c.toFixed(
-          4
+          4,
         )} ${value.h.toFixed(3)});`;
-      }
+      },
     );
 
     const cssOutput = `:root {\n${cssLines.filter(Boolean).join("\n")}\n}`;
@@ -291,9 +308,9 @@ export function Convergence({
         onClick={() => setIsOpen(true)}
         style={COMPONENT_STYLES.triggerButton}
         title="Open Theme Generator"
-        className="group hover:scale-105 active:scale-95" // keeping minimal scale transforms via class if helpful, but styles handle base
+        className="group hover:scale-105 active:scale-95"
       >
-        <span style={{ fontSize: "24px", lineHeight: 1 }}>🎨</span>
+        <span style={{ fontSize: "12px", lineHeight: 1 }}></span>
       </button>
     );
   }
@@ -338,31 +355,61 @@ export function Convergence({
             <Copy size={16} /> Copy CSS Variables
           </Button>
 
-          {/* History Controls */}
-          <div style={{ display: "flex", gap: "8px" }}>
-            <Button
-              variant="outline"
-              style={COMPONENT_STYLES.buttonClass}
-              onClick={handleUndo}
-              disabled={historyIndex === 0}
+          {/* Presets */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              position: "relative",
+            }}
+          >
+            <Label>Presets</Label>
+
+            <button
+              style={COMPONENT_STYLES.selectTrigger}
+              onClick={() => setPresetsOpen(!presetsOpen)}
             >
-              <Undo size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              style={COMPONENT_STYLES.buttonClass}
-              onClick={handleRedo}
-              disabled={historyIndex === history.length - 1}
-            >
-              <Redo size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              style={COMPONENT_STYLES.buttonClass}
-              onClick={handleReset}
-            >
-              <RotateCcw size={16} /> Reset
-            </Button>
+              <span>{selectedPreset}</span>
+              <ChevronDown
+                size={14}
+                style={{
+                  transform: presetsOpen ? "rotate(180deg)" : "none",
+                  transition: "transform 0.2s",
+                }}
+              />
+            </button>
+
+            {presetsOpen && (
+              <>
+                <div
+                  style={{ position: "fixed", inset: 0, zIndex: 9 }}
+                  onClick={() => setPresetsOpen(false)}
+                />
+                <div style={COMPONENT_STYLES.selectDropdown}>
+                  {Object.entries(PRESETS).map(([name, config]) => (
+                    <button
+                      key={name}
+                      onClick={() => {
+                        updateTheme(config);
+                        setSelectedPreset(name);
+                        setPresetsOpen(false);
+                      }}
+                      style={COMPONENT_STYLES.selectItem}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          "rgba(255,255,255,0.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "transparent")
+                      }
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Mode Toggle (Visual Only for now) */}
@@ -480,7 +527,7 @@ export function Convergence({
                         if (!color) return null;
                         const hexValue = convertOklchToHex(color);
                         const oklchString = `oklch(${color.l.toFixed(
-                          2
+                          2,
                         )} ${color.c.toFixed(2)} ${color.h.toFixed(2)})`;
 
                         return (
@@ -534,7 +581,7 @@ export function Convergence({
                                 onChange={(e) =>
                                   updateColorFromOklchString(
                                     themeKey,
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 style={{
