@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { ConvergenceEngine } from "../index";
 import { ThemeConfig, ThemeKey, OklchColor } from "../types";
-import { INITIAL_THEME, PRESETS } from "../defaults";
+import { DARK_THEME, PRESETS } from "../defaults";
 import { convertHexToOklch, convertOklchToHex } from "../utils/color";
 import { Input, Label, Button, Select } from "./ui/primitives";
 import { Copy, X, ChevronDown } from "lucide-react";
@@ -110,10 +110,10 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "56px",
-    height: "56px",
-    backgroundColor: "#18181b",
-    color: "white",
+    width: "40px",
+    backgroundColor: "white",
+    height: "40px",
+
     borderRadius: "9999px",
     boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
     border: "1px solid rgba(255,255,255,0.1)",
@@ -226,7 +226,7 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
 };
 
 export function Convergence({
-  initialConfig = INITIAL_THEME,
+  initialConfig = DARK_THEME,
   className,
   syncStart = true,
 }: ConvergenceProps) {
@@ -234,7 +234,7 @@ export function Convergence({
   const [isOpen, setIsOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] =
-    useState<string>("Select a preset...");
+    useState<string>("Select a preset");
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
@@ -310,7 +310,44 @@ export function Convergence({
         title="Open Theme Generator"
         className="group hover:scale-105 active:scale-95"
       >
-        <span style={{ fontSize: "12px", lineHeight: 1 }}></span>
+        <span style={{ fontSize: "12px", lineHeight: 1 }}>
+          <svg
+            fill="#18181b"
+            viewBox="0 0 512 512"
+            width="24"
+            height="24"
+            version="1.1"
+            xmlSpace="preserve"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+          >
+            <g id="Paint_Roller">
+              <g id="XMLID_244_">
+                <path
+                  d="M249,297.82c0-31.312-23.952-56.82-55.265-56.82h-57.783C108.485,241,85,218.686,85,191.22v-79.701    c0-26.645,19.797-48.565,45.404-50.647c0.327,0.143,0.596,0.267,0.596,0.375V69h24V34h-24v6.859    c-16,0.755-33.499,8.113-46.028,20.93C71.851,75.211,65,92.872,65,111.519v79.701C65,229.673,97.499,261,135.952,261h57.783    C214.061,261,229,277.494,229,297.82V338h-11v52h45v-52h-14V297.82z"
+                  id="XMLID_268_"
+                />
+                <rect height="99" id="XMLID_275_" width="141" x="240" y="2" />
+                <path
+                  d="M194.467,101H220V2h-25.533C184.512,2,175,10.029,175,19.985v4.31v53.879v4.31    C175,92.44,184.512,101,194.467,101z"
+                  id="XMLID_331_"
+                />
+                <path
+                  d="M429.381,2H400v99h29.381C439.337,101,446,92.44,446,82.485v-62.5C446,10.029,439.337,2,429.381,2z"
+                  id="XMLID_355_"
+                />
+                <path
+                  d="M387.628,121H304v59.545c0,9.361,8.256,16.977,17.595,16.977c9.339,0,17.266-7.616,17.266-16.977    c0-5.502,4.068-9.963,9.57-9.963c5.502,0,9.57,4.46,9.57,9.963v32.328c0,9.361,7.161,16.977,16.5,16.977s16.5-7.616,16.5-16.977    v-91.442c0,0.033,0.334,0.318-0.002,0.318C389.43,121.749,388.948,122,387.628,121z"
+                  id="XMLID_356_"
+                />
+                <path
+                  d="M218,487.658c0,12.333,10.168,22.365,22.499,22.365c12.333,0,22.501-10.033,22.501-22.365V410h-45    V487.658z"
+                  id="XMLID_357_"
+                />
+              </g>
+            </g>
+          </svg>
+        </span>
       </button>
     );
   }
@@ -318,7 +355,6 @@ export function Convergence({
   return (
     <div style={COMPONENT_STYLES.wrapperOpen} className={className || ""}>
       <div style={COMPONENT_STYLES.backdrop} onClick={() => setIsOpen(false)} />
-
       <div style={COMPONENT_STYLES.panel}>
         {/* Header */}
         <div style={COMPONENT_STYLES.header}>
@@ -411,51 +447,6 @@ export function Convergence({
               </>
             )}
           </div>
-
-          {/* Mode Toggle (Visual Only for now) */}
-          {/* <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <Label>Mode</Label>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <Button
-                variant="outline"
-                style={COMPONENT_STYLES.buttonClass}
-                onClick={() => updateTheme({ ...theme, mode: "light" })}
-                disabled={theme.mode === "light"}
-              >
-                <Sun size={16} /> Light
-              </Button>
-              <Button
-                variant="outline"
-                style={{
-                  flex: 1,
-                  justifyContent: "flex-start",
-                  gap: "8px",
-                  fontWeight: 400,
-                }}
-              >
-                <Moon size={16} /> Dark
-              </Button>
-            </div>
-          </div> */}
-
-          {/* Themes Actions */}
-          {/* <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <Label>Themes</Label>
-            <div style={{ display: "flex" }}>
-              <Button
-                variant="outline"
-                style={{
-                  flex: 1,
-                  justifyContent: "flex-start",
-                  gap: "8px",
-                  fontWeight: 400,
-                  fontSize: "12px",
-                }}
-              >
-                <Download size={16} /> Import
-              </Button>
-            </div>
-          </div> */}
 
           {/* Tabs
           <div

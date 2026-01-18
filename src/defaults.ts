@@ -1,6 +1,6 @@
 import { ThemeConfig } from './types';
 
-export const INITIAL_THEME: ThemeConfig = {
+export const DARK_THEME: ThemeConfig = {
     background: { l: 0.99, c: 0, h: 0 },
     foreground: { l: 0.1, c: 0.01, h: 260 }, // deep zinc
     card: { l: 1.0, c: 0, h: 0 },
@@ -35,7 +35,7 @@ export const INITIAL_THEME: ThemeConfig = {
     'sidebar-ring': { l: 0.8, c: 0.0, h: 0 }
 } as ThemeConfig;
 
-export const DARK_THEME: ThemeConfig = {
+export const LIGHT_THEME: ThemeConfig = {
     background: { l: 0.09, c: 0.0, h: 0 },
     foreground: { l: 0.98, c: 0.0, h: 0 },
     card: { l: 0.12, c: 0.0, h: 0 },
@@ -71,6 +71,6 @@ export const DARK_THEME: ThemeConfig = {
 } as ThemeConfig;
 
 export const PRESETS: Record<string, ThemeConfig> = {
-    "Light": INITIAL_THEME,
+    "Light": LIGHT_THEME,
     "Dark": DARK_THEME
 };

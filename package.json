@@ -1,6 +1,6 @@
 {
-  "name": "convergence",
-  "version": "0.1.0",
+  "name": "convergence-ui",
+  "version": "1.0.0",
   "description": "This package converts your websites styles according to your requirements on a development phase project.",
   "license": "ISC",
   "author": "Hyperion147",
