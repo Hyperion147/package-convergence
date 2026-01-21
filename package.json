@@ -1,8 +1,8 @@
 {
   "name": "convergence-ui",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "This package converts your websites styles according to your requirements on a development phase project.",
-  "license": "ISC",
+  "license": "MIT",
   "author": "Hyperion147",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -37,7 +37,16 @@
     "type": "git",
     "url": "git+https://github.com/Hyperion147/package-convergence.git"
   },
-  "keywords": [],
+  "keywords": [
+    "react",
+    "theme",
+    "generator",
+    "oklch",
+    "css-variables",
+    "design-system",
+    "color-palette",
+    "ui-tool"
+  ],
   "bugs": {
     "url": "https://github.com/Hyperion147/package-convergence/issues"
   },

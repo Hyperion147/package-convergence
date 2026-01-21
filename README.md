@@ -2,8 +2,6 @@
 
 A lightweight, powerful engine for real-time CSS theme generation and management. `convergence-ui` makes it effortless to create, preview, and export color themes for your web applications using modern OKLCH color spaces.
 
-![Convergence UI](./src/components/convergence.svg)
-
 ## Features
 
 - 🎨 **Real-time Theme Generation**: Instantly visualize changes as you adjust colors.
