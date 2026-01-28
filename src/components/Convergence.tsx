@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { ConvergenceEngine } from "../index";
 import { ThemeConfig, ThemeKey, OklchColor } from "../types";
 import { DARK_THEME, PRESETS } from "../defaults";
@@ -52,6 +58,34 @@ const GROUPS = {
   ],
 };
 
+const FONTS = {
+  sans: [
+    "Inter, sans-serif",
+    "Poppins, sans-serif",
+    "Roboto, sans-serif",
+    "Open Sans, sans-serif",
+  ],
+  serif: [
+    'Georgia, Cambria, "Times New Roman", Times, serif',
+    "Merriweather, serif",
+    '"Playfair Display", serif',
+    "Garamond, serif",
+  ],
+  mono: [
+    'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    '"JetBrains Mono", monospace',
+    '"Fira Code", monospace',
+    "Courier, monospace",
+  ],
+};
+
+interface TypographyConfig {
+  fontSans: string;
+  fontSerif: string;
+  fontMono: string;
+  letterSpacing: string;
+}
+
 const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
   wrapperOpen: {
     position: "fixed",
@@ -60,13 +94,6 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     display: "flex",
     justifyContent: "flex-end",
     pointerEvents: "none",
-  },
-  backdrop: {
-    position: "absolute",
-    inset: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    pointerEvents: "auto",
-    transition: "opacity 300ms",
   },
   panel: {
     position: "relative",
@@ -124,13 +151,14 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   buttonClass: {
-    flex: 1,
-    display: "flex", // Added
-    alignItems: "center", // Added
-    justifyContent: "center", // Added
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     border: "1px solid #27272a", // zinc-800
     padding: "4px 0",
     gap: "8px",
+    height: "36px",
   },
   section: {
     backgroundColor: "#09090b", // zinc-900
@@ -225,6 +253,102 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
   },
 };
 
+const CustomSelect = ({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  const displayValue = value.split(",")[0].replace(/['"]/g, "");
+
+  const handleOpen = () => {
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: "fixed",
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        ...COMPONENT_STYLES.selectDropdown,
+        zIndex: 2147483647,
+        maxHeight: "240px",
+        overflowY: "auto",
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        ref={triggerRef}
+        style={COMPONENT_STYLES.selectTrigger}
+        onClick={handleOpen}
+      >
+        <span
+          style={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {displayValue}
+        </span>
+        <ChevronDown
+          size={14}
+          style={{
+            transform: isOpen ? "rotate(180deg)" : "none",
+            transition: "transform 0.2s",
+            flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 2147483646,
+              cursor: "default",
+            }}
+            onClick={() => setIsOpen(false)}
+          />
+          <div style={dropdownStyle}>
+            {options.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+                style={COMPONENT_STYLES.selectItem}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor =
+                    "rgba(255,255,255,0.05)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
+              >
+                {option.split(",")[0].replace(/['"]/g, "")}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 export function Convergence({
   initialConfig = DARK_THEME,
   className,
@@ -238,6 +362,14 @@ export function Convergence({
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
+  const [activeTab, setActiveTab] = useState<"colors" | "typography">("colors");
+  const [typography, setTypography] = useState<TypographyConfig>({
+    fontSans: "Inter, sans-serif",
+    fontSerif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+    fontMono:
+      'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    letterSpacing: "normal",
+  });
 
   const engine = useMemo(() => {
     if (typeof window !== "undefined") {
@@ -252,8 +384,98 @@ export function Convergence({
       // Read current CSS variables from the DOM
       const currentTheme = engine.syncFromDom();
       setTheme(currentTheme);
+
+      if (typeof document !== "undefined") {
+        const computed = getComputedStyle(document.documentElement);
+        setTypography({
+          fontSans: computed.getPropertyValue("--font-sans") || FONTS.sans[0],
+          fontSerif:
+            computed.getPropertyValue("--font-serif") || FONTS.serif[0],
+          fontMono: computed.getPropertyValue("--font-mono") || FONTS.mono[0],
+          letterSpacing:
+            computed.getPropertyValue("--letter-spacing") || "normal",
+        });
+      }
     }
   }, [engine, syncStart]);
+
+  // Inject global styles for letter spacing force
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const styleId = "convergence-global-typography";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    styleEl.innerHTML = `
+      * {
+        letter-spacing: var(--letter-spacing) !important;
+      }
+      body, button, input, select, textarea {
+        font-family: var(--font-sans) !important;
+      }
+      code, pre, kbd, samp, code * {
+        font-family: var(--font-mono) !important;
+      }
+    `;
+  }, []); // Run once on mount to ensure tag exists, but the var updates naturally
+
+  const loadGoogleFont = (value: string) => {
+    if (typeof document === "undefined") return;
+
+    // Extract font name from string like "Poppins, sans-serif" -> "Poppins"
+    const fontName = value.split(",")[0].replace(/['"]/g, "").trim();
+
+    // List of known Google Fonts
+    const googleFonts = [
+      "Inter",
+      "Poppins",
+      "Roboto",
+      "Open Sans",
+      "Merriweather",
+      "Playfair Display",
+      "JetBrains Mono",
+      "Fira Code",
+    ];
+
+    if (!googleFonts.includes(fontName)) return;
+
+    const linkId = `google-font-${fontName.toLowerCase().replace(/\s+/g, "-")}`;
+    if (document.getElementById(linkId)) return;
+
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(
+      /\s+/g,
+      "+",
+    )}:wght@300;400;500;600;700&display=swap`;
+    document.head.appendChild(link);
+  };
+
+  const updateTypography = (key: keyof TypographyConfig, value: string) => {
+    setTypography((prev) => ({ ...prev, [key]: value }));
+    if (typeof document !== "undefined") {
+      const cssVar =
+        key === "fontSans"
+          ? "--font-sans"
+          : key === "fontSerif"
+            ? "--font-serif"
+            : key === "fontMono"
+              ? "--font-mono"
+              : "--letter-spacing";
+      document.documentElement.style.setProperty(cssVar, value);
+
+      if (key !== "letterSpacing") {
+        loadGoogleFont(value);
+      }
+    }
+  };
 
   const updateTheme = useCallback(
     (newTheme: ThemeConfig) => {
@@ -296,7 +518,22 @@ export function Convergence({
       },
     );
 
-    const cssOutput = `:root {\n${cssLines.filter(Boolean).join("\n")}\n}`;
+    const typographyLines = Object.entries(typography).map(([key, value]) => {
+      const cssVar =
+        key === "fontSans"
+          ? "--font-sans"
+          : key === "fontSerif"
+            ? "--font-serif"
+            : key === "fontMono"
+              ? "--font-mono"
+              : "--letter-spacing";
+      return `  ${cssVar}: ${value};`;
+    });
+
+    const cssOutput = `:root {\n${[
+      ...cssLines.filter(Boolean),
+      ...typographyLines,
+    ].join("\n")}\n}`;
     navigator.clipboard.writeText(cssOutput).then(() => {
       alert("Copied to clipboard!");
     });
@@ -354,7 +591,7 @@ export function Convergence({
 
   return (
     <div style={COMPONENT_STYLES.wrapperOpen} className={className || ""}>
-      <div style={COMPONENT_STYLES.backdrop} onClick={() => setIsOpen(false)} />
+      <div onClick={() => setIsOpen(false)} />
       <div style={COMPONENT_STYLES.panel}>
         {/* Header */}
         <div style={COMPONENT_STYLES.header}>
@@ -448,151 +685,289 @@ export function Convergence({
             )}
           </div>
 
-          {/* Tabs
+          {/* Tabs */}
           <div
             style={{
               display: "flex",
               padding: "4px",
               backgroundColor: "rgba(255,255,255,0.05)",
               borderRadius: "8px",
+              gap: "4px",
             }}
           >
             <button
+              onClick={() => setActiveTab("colors")}
               style={{
                 flex: 1,
-                padding: "2px 0",
+                padding: "4px 0",
                 fontSize: "12px",
                 fontWeight: 500,
-                backgroundColor: "#09090b",
+                backgroundColor:
+                  activeTab === "colors" ? "#09090b" : "transparent",
                 borderRadius: "6px",
-                color: "#f4f4f5",
+                color: activeTab === "colors" ? "#f4f4f5" : "#a1a1aa",
                 border: "none",
                 cursor: "pointer",
+                transition: "all 0.2s",
               }}
             >
               Colors
             </button>
-          </div> */}
+            <button
+              onClick={() => setActiveTab("typography")}
+              style={{
+                flex: 1,
+                padding: "4px 0",
+                fontSize: "12px",
+                fontWeight: 500,
+                backgroundColor:
+                  activeTab === "typography" ? "#09090b" : "transparent",
+                borderRadius: "6px",
+                color: activeTab === "typography" ? "#f4f4f5" : "#a1a1aa",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              Typography
+            </button>
+          </div>
 
-          {/* Colors List */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-          >
-            {Object.entries(GROUPS).map(([groupName, keys]) => {
-              const isCollapsed = collapsedGroups[groupName];
-              return (
-                <div key={groupName} style={COMPONENT_STYLES.section}>
-                  <button
-                    onClick={() => toggleGroup(groupName)}
-                    style={COMPONENT_STYLES.sectionHeader}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                      {groupName}
-                    </span>
-                    <span
-                      style={{
-                        transition: "transform 0.2s",
-                        transform: isCollapsed
-                          ? "rotate(0deg)"
-                          : "rotate(180deg)",
-                        color: "#a1a1aa",
-                        display: "flex",
-                      }}
-                    >
-                      <ChevronDown />
-                    </span>
-                  </button>
+          {/* Typography Content */}
+          {activeTab === "typography" && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              <div style={COMPONENT_STYLES.section}>
+                <div style={COMPONENT_STYLES.sectionHeader}>
+                  <span style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Fonts & Spacing
+                  </span>
+                </div>
+                <div
+                  style={{
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                  }}
+                >
+                  <div className="flex flex-col gap-2">
+                    <Label>Sans-Serif Font</Label>
+                    <CustomSelect
+                      value={typography.fontSans}
+                      options={FONTS.sans}
+                      onChange={(val) => updateTypography("fontSans", val)}
+                    />
+                  </div>
 
-                  {!isCollapsed && (
+                  <div className="flex flex-col gap-2">
+                    <Label>Serif Font</Label>
+                    <CustomSelect
+                      value={typography.fontSerif}
+                      options={FONTS.serif}
+                      onChange={(val) => updateTypography("fontSerif", val)}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Monospace Font</Label>
+                    <CustomSelect
+                      value={typography.fontMono}
+                      options={FONTS.mono}
+                      onChange={(val) => updateTypography("fontMono", val)}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
                     <div
                       style={{
-                        padding: "16px",
                         display: "flex",
-                        flexDirection: "column",
-                        gap: "24px",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
-                      {keys.map((key) => {
-                        const themeKey = key as ThemeKey;
-                        const color = theme[themeKey];
-                        if (!color) return null;
-                        const hexValue = convertOklchToHex(color);
-                        const oklchString = `oklch(${color.l.toFixed(
-                          2,
-                        )} ${color.c.toFixed(2)} ${color.h.toFixed(2)})`;
+                      <Label>Letter Spacing</Label>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center", // Fixed alignment
+                          gap: "8px",
+                        }}
+                      >
+                        <Input
+                          value={
+                            typography.letterSpacing === "normal"
+                              ? "0"
+                              : parseFloat(typography.letterSpacing).toString()
+                          }
+                          onChange={(e) =>
+                            updateTypography(
+                              "letterSpacing",
+                              `${e.target.value}px`,
+                            )
+                          }
+                          style={{
+                            width: "60px",
+                            height: "28px",
+                            padding: "0 8px",
+                          }}
+                        />
+                        <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
+                          px
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="-2"
+                      max="10"
+                      step="0.1"
+                      value={
+                        typography.letterSpacing === "normal"
+                          ? 0
+                          : parseFloat(typography.letterSpacing) || 0
+                      }
+                      onChange={(e) =>
+                        updateTypography("letterSpacing", `${e.target.value}px`)
+                      }
+                      style={{
+                        width: "100%",
+                        accentColor: "white",
+                        height: "4px", // Slightly thicker for better visibility
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-                        return (
-                          <div
-                            key={key}
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "8px",
-                            }}
-                          >
-                            <div style={COMPONENT_STYLES.row}>
-                              <span
-                                style={{
-                                  fontWeight: 500,
-                                  textTransform: "capitalize",
-                                  color: "#e4e4e7",
-                                }}
-                              >
-                                {key.replace(/-/g, " ")}
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily: "monospace",
-                                  color: "#a1a1aa",
-                                }}
-                              >
-                                {hexValue}
-                              </span>
-                            </div>
-                            <div style={{ display: "flex", gap: "8px" }}>
-                              <div style={COMPONENT_STYLES.colorPreview}>
-                                <div
+          {/* Colors List */}
+          {activeTab === "colors" && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              {Object.entries(GROUPS).map(([groupName, keys]) => {
+                const isCollapsed = collapsedGroups[groupName];
+                return (
+                  <div key={groupName} style={COMPONENT_STYLES.section}>
+                    <button
+                      onClick={() => toggleGroup(groupName)}
+                      style={COMPONENT_STYLES.sectionHeader}
+                    >
+                      <span style={{ fontWeight: 600, fontSize: "14px" }}>
+                        {groupName}
+                      </span>
+                      <span
+                        style={{
+                          transition: "transform 0.2s",
+                          transform: isCollapsed
+                            ? "rotate(0deg)"
+                            : "rotate(180deg)",
+                          color: "#a1a1aa",
+                          display: "flex",
+                        }}
+                      >
+                        <ChevronDown />
+                      </span>
+                    </button>
+
+                    {!isCollapsed && (
+                      <div
+                        style={{
+                          padding: "16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "24px",
+                        }}
+                      >
+                        {keys.map((key) => {
+                          const themeKey = key as ThemeKey;
+                          const color = theme[themeKey];
+                          if (!color) return null;
+                          const hexValue = convertOklchToHex(color);
+                          const oklchString = `oklch(${color.l.toFixed(
+                            2,
+                          )} ${color.c.toFixed(2)} ${color.h.toFixed(2)})`;
+
+                          return (
+                            <div
+                              key={key}
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <div style={COMPONENT_STYLES.row}>
+                                <span
                                   style={{
-                                    position: "absolute",
-                                    inset: 0,
-                                    backgroundColor: hexValue,
+                                    fontWeight: 500,
+                                    textTransform: "capitalize",
+                                    color: "#e4e4e7",
+                                  }}
+                                >
+                                  {key.replace(/-/g, " ")}
+                                </span>
+                                <span
+                                  style={{
+                                    fontFamily: "monospace",
+                                    color: "#a1a1aa",
+                                  }}
+                                >
+                                  {hexValue}
+                                </span>
+                              </div>
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                <div style={COMPONENT_STYLES.colorPreview}>
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      inset: 0,
+                                      backgroundColor: hexValue,
+                                    }}
+                                  />
+                                  <input
+                                    type="color"
+                                    value={hexValue}
+                                    onChange={(e) =>
+                                      updateColorFromHex(
+                                        themeKey,
+                                        e.target.value,
+                                      )
+                                    }
+                                    style={COMPONENT_STYLES.colorInput}
+                                  />
+                                </div>
+                                <Input
+                                  value={oklchString}
+                                  onChange={(e) =>
+                                    updateColorFromOklchString(
+                                      themeKey,
+                                      e.target.value,
+                                    )
+                                  }
+                                  style={{
+                                    fontFamily: "monospace",
+                                    fontSize: "12px",
+                                    height: "36px",
+                                    backgroundColor: "rgba(9, 9, 11, 0.5)",
+                                    color: "#a1a1aa",
                                   }}
                                 />
-                                <input
-                                  type="color"
-                                  value={hexValue}
-                                  onChange={(e) =>
-                                    updateColorFromHex(themeKey, e.target.value)
-                                  }
-                                  style={COMPONENT_STYLES.colorInput}
-                                />
                               </div>
-                              <Input
-                                value={oklchString}
-                                onChange={(e) =>
-                                  updateColorFromOklchString(
-                                    themeKey,
-                                    e.target.value,
-                                  )
-                                }
-                                style={{
-                                  fontFamily: "monospace",
-                                  fontSize: "12px",
-                                  height: "36px",
-                                  backgroundColor: "rgba(9, 9, 11, 0.5)",
-                                  color: "#a1a1aa",
-                                }}
-                              />
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -41,8 +41,10 @@ interface ThemeConfig {
 }
 type ThemeKey = keyof ThemeConfig;
 
-declare const DARK_THEME: ThemeConfig;
 declare const LIGHT_THEME: ThemeConfig;
+declare const DARK_THEME: ThemeConfig;
+declare const COLD_THEME: ThemeConfig;
+declare const WARM_THEME: ThemeConfig;
 declare const PRESETS: Record<string, ThemeConfig>;
 
 interface ConvergenceProps {
@@ -66,4 +68,4 @@ declare class ConvergenceEngine {
     getConfig(): ThemeConfig;
 }
 
-export { Convergence, ConvergenceEngine, DARK_THEME, LIGHT_THEME, type OklchColor, PRESETS, type ThemeConfig, type ThemeKey };
+export { COLD_THEME, Convergence, ConvergenceEngine, DARK_THEME, LIGHT_THEME, type OklchColor, PRESETS, type ThemeConfig, type ThemeKey, WARM_THEME };

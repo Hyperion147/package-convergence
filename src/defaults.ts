@@ -70,7 +70,79 @@ export const DARK_THEME: ThemeConfig = {
     'sidebar-ring': { l: 0.8, c: 0.0, h: 0 }
 } as ThemeConfig;
 
+export const COLD_THEME: ThemeConfig = {
+    background: { l: 0.2854, c: 0.0860, h: 260.7630 }, // #0F2854
+    foreground: { l: 0.9048, c: 0.0479, h: 218.1013 }, // #BDE8F5
+    card: { l: 0.4235, c: 0.1184, h: 256.5936 }, // #1C4D8D
+    'card-foreground': { l: 0.9048, c: 0.0479, h: 218.1013 },
+    popover: { l: 0.2854, c: 0.0860, h: 260.7630 },
+    'popover-foreground': { l: 0.9048, c: 0.0479, h: 218.1013 },
+    primary: { l: 0.6114, c: 0.1125, h: 249.1011 }, // #4988C4
+    'primary-foreground': { l: 0.2854, c: 0.0860, h: 260.7630 },
+    secondary: { l: 0.4235, c: 0.1184, h: 256.5936 }, // #1C4D8D
+    'secondary-foreground': { l: 0.9048, c: 0.0479, h: 218.1013 },
+    muted: { l: 0.4235, c: 0.1184, h: 256.5936 },
+    'muted-foreground': { l: 0.6114, c: 0.1125, h: 249.1011 },
+    accent: { l: 0.6114, c: 0.1125, h: 249.1011 },
+    'accent-foreground': { l: 0.2854, c: 0.0860, h: 260.7630 },
+    destructive: { l: 0.3, c: 0.1, h: 25 },
+    'destructive-foreground': { l: 0.98, c: 0.0, h: 0 },
+    border: { l: 0.4235, c: 0.1184, h: 256.5936 },
+    input: { l: 0.4235, c: 0.1184, h: 256.5936 },
+    ring: { l: 0.6114, c: 0.1125, h: 249.1011 },
+    'chart-1': { l: 0.6114, c: 0.1125, h: 249.1011 },
+    'chart-2': { l: 0.4235, c: 0.1184, h: 256.5936 },
+    'chart-3': { l: 0.9048, c: 0.0479, h: 218.1013 },
+    'chart-4': { l: 0.7, c: 0.15, h: 80 },
+    'chart-5': { l: 0.55, c: 0.15, h: 320 },
+    sidebar: { l: 0.2854, c: 0.0860, h: 260.7630 },
+    'sidebar-foreground': { l: 0.9048, c: 0.0479, h: 218.1013 },
+    'sidebar-primary': { l: 0.6114, c: 0.1125, h: 249.1011 },
+    'sidebar-primary-foreground': { l: 0.2854, c: 0.0860, h: 260.7630 },
+    'sidebar-accent': { l: 0.4235, c: 0.1184, h: 256.5936 },
+    'sidebar-accent-foreground': { l: 0.9048, c: 0.0479, h: 218.1013 },
+    'sidebar-border': { l: 0.4235, c: 0.1184, h: 256.5936 },
+    'sidebar-ring': { l: 0.6114, c: 0.1125, h: 249.1011 }
+} as ThemeConfig;
+
+export const WARM_THEME: ThemeConfig = {
+    background: { l: 0.9479, c: 0.0381, h: 69.8797 }, // #FFEAD3
+    foreground: { l: 0.4908, c: 0.1324, h: 23.3148 }, // #9E3B3B
+    card: { l: 0.7080, c: 0.1373, h: 21.1270 }, // #EA7B7B
+    'card-foreground': { l: 0.9479, c: 0.0381, h: 69.8797 },
+    popover: { l: 0.9479, c: 0.0381, h: 69.8797 },
+    'popover-foreground': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    primary: { l: 0.6091, c: 0.1612, h: 23.1514 }, // #D25353
+    'primary-foreground': { l: 0.9479, c: 0.0381, h: 69.8797 },
+    secondary: { l: 0.7080, c: 0.1373, h: 21.1270 }, // #EA7B7B
+    'secondary-foreground': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    muted: { l: 0.7080, c: 0.1373, h: 21.1270 }, // #EA7B7B - using lighter shade for muted might be better, but sticking to palette
+    'muted-foreground': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    accent: { l: 0.7080, c: 0.1373, h: 21.1270 },
+    'accent-foreground': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    destructive: { l: 0.4908, c: 0.1324, h: 23.3148 }, // #9E3B3B
+    'destructive-foreground': { l: 0.9479, c: 0.0381, h: 69.8797 },
+    border: { l: 0.6091, c: 0.1612, h: 23.1514 }, // #D25353
+    input: { l: 0.6091, c: 0.1612, h: 23.1514 },
+    ring: { l: 0.4908, c: 0.1324, h: 23.3148 },
+    'chart-1': { l: 0.6091, c: 0.1612, h: 23.1514 },
+    'chart-2': { l: 0.7080, c: 0.1373, h: 21.1270 },
+    'chart-3': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    'chart-4': { l: 0.8, c: 0.1, h: 50 }, // Generic warm
+    'chart-5': { l: 0.6, c: 0.1, h: 10 }, // Generic warm
+    sidebar: { l: 0.9479, c: 0.0381, h: 69.8797 },
+    'sidebar-foreground': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    'sidebar-primary': { l: 0.6091, c: 0.1612, h: 23.1514 },
+    'sidebar-primary-foreground': { l: 0.9479, c: 0.0381, h: 69.8797 },
+    'sidebar-accent': { l: 0.7080, c: 0.1373, h: 21.1270 },
+    'sidebar-accent-foreground': { l: 0.4908, c: 0.1324, h: 23.3148 },
+    'sidebar-border': { l: 0.6091, c: 0.1612, h: 23.1514 },
+    'sidebar-ring': { l: 0.4908, c: 0.1324, h: 23.3148 }
+} as ThemeConfig;
+
 export const PRESETS: Record<string, ThemeConfig> = {
     "Light": LIGHT_THEME,
-    "Dark": DARK_THEME
+    "Dark": DARK_THEME,
+    "Cold": COLD_THEME,
+    "Warm": WARM_THEME
 };
