@@ -86,6 +86,12 @@ interface TypographyConfig {
   letterSpacing: string;
 }
 
+interface LayoutConfig {
+  radius: string;
+  borderWidth: string;
+  borderStyle: string;
+}
+
 const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
   wrapperOpen: {
     position: "fixed",
@@ -101,7 +107,7 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     maxWidth: "420px",
     height: "100dvh",
     backgroundColor: "#18181b", // zinc-950
-    borderLeft: "1px solid #27272a", // zinc-800
+    borderLeft: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
     boxShadow: "-10px 0 40px -15px rgba(0,0,0,0.3)",
     pointerEvents: "auto",
     display: "flex",
@@ -115,7 +121,7 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottom: "1px solid #27272a", // zinc-800
+    borderBottom: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
     backgroundColor: "#09090b", // zinc-950
     boxSizing: "border-box",
   },
@@ -143,7 +149,7 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
 
     borderRadius: "9999px",
     boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "var(--border-width, 1px) var(--border-style, solid) rgba(255,255,255,0.1)",
     cursor: "pointer",
     transition: "transform 0.2s",
     boxSizing: "border-box",
@@ -155,15 +161,16 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: "1px solid #27272a", // zinc-800
+    border: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
+    borderRadius: "calc(var(--radius, 8px) - 2px)",
     padding: "4px 0",
     gap: "8px",
     height: "36px",
   },
   section: {
     backgroundColor: "#09090b", // zinc-900
-    border: "1px solid #27272a", // zinc-800
-    borderRadius: "8px",
+    border: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
+    borderRadius: "var(--radius, 8px)",
     overflow: "hidden",
     boxSizing: "border-box",
   },
@@ -193,8 +200,8 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     position: "relative",
     width: "40px",
     height: "36px",
-    borderRadius: "6px",
-    border: "1px solid #27272a",
+    borderRadius: "calc(var(--radius, 8px) - 2px)",
+    border: "var(--border-width, 1px) var(--border-style, solid) #27272a",
     overflow: "hidden",
     boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     flexShrink: 0,
@@ -218,8 +225,8 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     width: "100%",
     padding: "8px 12px",
     backgroundColor: "rgba(24, 24, 27, 0.5)",
-    border: "1px solid #3f3f46",
-    borderRadius: "6px",
+    border: "var(--border-width, 1px) var(--border-style, solid) #3f3f46",
+    borderRadius: "calc(var(--radius, 8px) - 2px)",
     color: "#e4e4e7",
     fontSize: "14px",
     cursor: "pointer",
@@ -231,8 +238,8 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     backgroundColor: "#18181b",
-    border: "1px solid #27272a",
-    borderRadius: "6px",
+    border: "var(--border-width, 1px) var(--border-style, solid) #27272a",
+    borderRadius: "calc(var(--radius, 8px) - 2px)",
     overflow: "hidden",
     zIndex: 10,
     display: "flex",
@@ -251,6 +258,27 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     transition: "background-color 0.2s",
   },
+};
+
+const getRadiusClass = (rem: number) => {
+  if (rem === 0) return "rounded-none";
+  if (rem < 0.25) return "rounded-sm";
+  if (rem === 0.25) return "rounded";
+  if (rem < 0.5) return "rounded-md";
+  if (rem === 0.5) return "rounded-lg";
+  if (rem <= 0.75) return "rounded-xl";
+  if (rem <= 1) return "rounded-2xl";
+  if (rem <= 1.5) return "rounded-3xl";
+  return "rounded-full";
+};
+
+const getBorderWidthClass = (px: number) => {
+  if (px === 0) return "border-0";
+  if (px === 1) return "border";
+  if (px === 2) return "border-2";
+  if (px === 4) return "border-4";
+  if (px === 8) return "border-8";
+  return `border-[${px}px]`;
 };
 
 const CustomSelect = ({
@@ -362,13 +390,19 @@ export function Convergence({
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
-  const [activeTab, setActiveTab] = useState<"colors" | "typography">("colors");
+  const [activeTab, setActiveTab] = useState<"colors" | "typography" | "layout">("colors");
+  const [copied, setCopied] = useState(false);
   const [typography, setTypography] = useState<TypographyConfig>({
     fontSans: "Inter, sans-serif",
     fontSerif: 'Georgia, Cambria, "Times New Roman", Times, serif',
     fontMono:
       'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     letterSpacing: "normal",
+  });
+  const [layout, setLayout] = useState<LayoutConfig>({
+    radius: "0rem",
+    borderWidth: "2px",
+    borderStyle: "dashed",
   });
 
   const engine = useMemo(() => {
@@ -394,6 +428,11 @@ export function Convergence({
           fontMono: computed.getPropertyValue("--font-mono") || FONTS.mono[0],
           letterSpacing:
             computed.getPropertyValue("--letter-spacing") || "normal",
+        });
+        setLayout({
+          radius: computed.getPropertyValue("--radius") || "0rem",
+          borderWidth: computed.getPropertyValue("--border-width") || "2px",
+          borderStyle: computed.getPropertyValue("--border-style") || "dashed",
         });
       }
     }
@@ -422,6 +461,15 @@ export function Convergence({
       code, pre, kbd, samp, code * {
         font-family: var(--font-mono) !important;
       }
+
+      /* Global Layout Integrations for standard tailwind components */
+      .border { border-width: var(--border-width, 2px) !important; border-style: var(--border-style, dashed) !important; }
+      .rounded-lg { border-radius: var(--radius, 0rem) !important; }
+      .rounded-md, .rounded { border-radius: calc(var(--radius, 0rem) - 2px) !important; }
+      .rounded-sm { border-radius: calc(var(--radius, 0rem) - 4px) !important; }
+      .rounded-xl { border-radius: calc(var(--radius, 0rem) + 4px) !important; }
+      .rounded-2xl { border-radius: calc(var(--radius, 0rem) + 8px) !important; }
+      .rounded-3xl { border-radius: calc(var(--radius, 0rem) + 12px) !important; }
     `;
   }, []); // Run once on mount to ensure tag exists, but the var updates naturally
 
@@ -456,6 +504,19 @@ export function Convergence({
       "+",
     )}:wght@300;400;500;600;700&display=swap`;
     document.head.appendChild(link);
+  };
+
+  const updateLayout = (key: keyof LayoutConfig, value: string) => {
+    setLayout((prev) => ({ ...prev, [key]: value }));
+    if (typeof document !== "undefined") {
+      const cssVar =
+        key === "radius"
+          ? "--radius"
+          : key === "borderWidth"
+            ? "--border-width"
+            : "--border-style";
+      document.documentElement.style.setProperty(cssVar, value);
+    }
   };
 
   const updateTypography = (key: keyof TypographyConfig, value: string) => {
@@ -530,12 +591,19 @@ export function Convergence({
       return `  ${cssVar}: ${value};`;
     });
 
+    const layoutLines = Object.entries(layout).map(([key, value]) => {
+      const cssVar = key === "radius" ? "--radius" : key === "borderWidth" ? "--border-width" : "--border-style";
+      return `  ${cssVar}: ${value};`;
+    });
+
     const cssOutput = `:root {\n${[
       ...cssLines.filter(Boolean),
       ...typographyLines,
+      ...layoutLines,
     ].join("\n")}\n}`;
     navigator.clipboard.writeText(cssOutput).then(() => {
-      alert("Copied to clipboard!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     });
   };
 
@@ -602,7 +670,7 @@ export function Convergence({
               letterSpacing: "-0.01em",
             }}
           >
-            Theme Generator
+            Convergence UI
           </span>
           <button
             onClick={() => setIsOpen(false)}
@@ -620,13 +688,37 @@ export function Convergence({
 
         {/* Actions Area */}
         <div style={COMPONENT_STYLES.content}>
-          <Button
-            style={COMPONENT_STYLES.buttonClass}
-            variant="outline"
-            onClick={handleExport}
-          >
-            <Copy size={16} /> Copy CSS Variables
-          </Button>
+          <div style={{ position: "relative" }}>
+            <Button
+              style={COMPONENT_STYLES.buttonClass}
+              variant="outline"
+              onClick={handleExport}
+            >
+              <Copy size={16} /> Copy CSS Variables
+            </Button>
+            {copied && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  left: "90%",
+                  transform: "translateX(-50%)",
+                  backgroundColor: "#27272a",
+                  color: "#f4f4f5",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                  zIndex: 20,
+                  pointerEvents: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Copied 🎉
+              </div>
+            )}
+          </div>
 
           {/* Presets */}
           <div
@@ -730,6 +822,24 @@ export function Convergence({
               }}
             >
               Typography
+            </button>
+            <button
+              onClick={() => setActiveTab("layout")}
+              style={{
+                flex: 1,
+                padding: "4px 0",
+                fontSize: "12px",
+                fontWeight: 500,
+                backgroundColor:
+                  activeTab === "layout" ? "#09090b" : "transparent",
+                borderRadius: "6px",
+                color: activeTab === "layout" ? "#f4f4f5" : "#a1a1aa",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              Layout
             </button>
           </div>
 
@@ -838,6 +948,201 @@ export function Convergence({
                         cursor: "pointer",
                       }}
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Layout Content */}
+          {activeTab === "layout" && (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              <div style={COMPONENT_STYLES.section}>
+                <div style={COMPONENT_STYLES.sectionHeader}>
+                  <span style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Borders & Spacing
+                  </span>
+                </div>
+                <div
+                  style={{
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "24px",
+                  }}
+                >
+                  <div className="flex flex-col gap-2">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Label>Border Radius</Label>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            backgroundColor: "#27272a",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            color: "#a1a1aa",
+                            fontFamily: "monospace"
+                          }}
+                        >
+                          {getRadiusClass(parseFloat(layout.radius) || 0)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <Input
+                          value={parseFloat(layout.radius) || 0}
+                          onChange={(e) =>
+                            updateLayout("radius", `${e.target.value}rem`)
+                          }
+                          style={{
+                            width: "60px",
+                            height: "28px",
+                            padding: "0 8px",
+                          }}
+                        />
+                        <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
+                          rem
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.05"
+                      value={parseFloat(layout.radius) || 0}
+                      onChange={(e) =>
+                        updateLayout("radius", `${e.target.value}rem`)
+                      }
+                      style={{
+                        width: "100%",
+                        accentColor: "white",
+                        height: "4px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Label>Border Width</Label>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            backgroundColor: "#27272a",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            color: "#a1a1aa",
+                            fontFamily: "monospace"
+                          }}
+                        >
+                          {getBorderWidthClass(parseFloat(layout.borderWidth) || 0)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <Input
+                          value={parseFloat(layout.borderWidth) || 0}
+                          onChange={(e) =>
+                            updateLayout("borderWidth", `${e.target.value}px`)
+                          }
+                          style={{
+                            width: "60px",
+                            height: "28px",
+                            padding: "0 8px",
+                          }}
+                        />
+                        <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
+                          px
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      step="1"
+                      value={parseFloat(layout.borderWidth) || 0}
+                      onChange={(e) =>
+                        updateLayout("borderWidth", `${e.target.value}px`)
+                      }
+                      style={{
+                        width: "100%",
+                        accentColor: "white",
+                        height: "4px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Label>Border Style</Label>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        padding: "4px",
+                        backgroundColor: "rgba(255,255,255,0.05)",
+                        borderRadius: "8px",
+                        gap: "4px",
+                      }}
+                    >
+                      {["solid", "dashed", "dotted"].map((style) => (
+                        <button
+                          key={style}
+                          onClick={() => updateLayout("borderStyle", style)}
+                          style={{
+                            flex: 1,
+                            padding: "6px 0",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                            backgroundColor:
+                              layout.borderStyle === style ? "#09090b" : "transparent",
+                            borderRadius: "6px",
+                            color: layout.borderStyle === style ? "#f4f4f5" : "#a1a1aa",
+                            border: layout.borderStyle === style ? "1px solid #27272a" : "1px solid transparent",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                            textTransform: "capitalize"
+                          }}
+                        >
+                          {style}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

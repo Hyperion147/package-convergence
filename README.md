@@ -1,15 +1,18 @@
 # Convergence UI
 
-A lightweight, powerful engine for real-time CSS theme generation and management. `convergence-ui` makes it effortless to create, preview, and export color themes for your web applications using modern OKLCH color spaces.
+A lightweight, powerful engine for real-time CSS theme generation and management. `convergence-ui` makes it effortless to create, preview, and export design tokens for your web applications using modern OKLCH color spaces and advanced typography controls.
 
 ## Features
 
 - 🎨 **Real-time Theme Generation**: Instantly visualize changes as you adjust colors.
 - 📐 **OKLCH Color Space**: Uses modern perceptual color models for consistent and vibrant palettes.
-- 🔄 **Two-way Syncing**: Initializes from your existing CSS variables.
+- 🔡 **Typography Management**: Customizing sans-serif, serif, and monospace fonts along with letter-spacing.
+- 📏 **Layout Tokens**: Manage border radius and border width variables.
+- 🌐 **Google Fonts Integration**: Automatically loads popular Google Fonts (Inter, Poppins, Roboto, etc.) when selected.
+- 🔄 **Two-way Syncing**: Initializes from your existing CSS variables on mount.
 - 📦 **Zero-Config UI Component**: Includes a drop-in `<Convergence />` component for an immediate theme editor overlay.
-- 💾 **Presets**: Built-in Light and Dark presets (easily extensible).
-- 📋 **Export to CSS**: One-click copy of generated CSS variables to your clipboard.
+- 💾 **Presets**: Built-in presets: **Light**, **Dark**, **Cold**, and **Warm**.
+- 📋 **Export to CSS**: One-click copy of generated CSS variables (colors, typography, and layout) to your clipboard.
 
 ## Installation
 
@@ -23,7 +26,7 @@ pnpm add convergence-ui
 
 ## Usage
 
-### 1. The Comparison Component (Recommended)
+### 1. The Overlay Component (Recommended)
 
 The easiest way to use Convergence is to drop the `<Convergence />` component into your application's root layout or a specific page. It provides a collapsible UI for tweaking your application's design tokens in real-time.
 
@@ -44,7 +47,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-The component will appear as a floating toggle button in the bottom-right corner of your screen.
+The component will appear as a floating toggle button with a **Paint Roller icon** in the bottom-right corner of your screen.
 
 ### 2. Programmatic Usage
 
@@ -56,7 +59,8 @@ import { ConvergenceEngine, ThemeConfig } from "convergence-ui";
 const myTheme: ThemeConfig = {
   // define your oklch colors here
   primary: { l: 0.5, c: 0.2, h: 250 },
-  // ...
+  background: { l: 0.99, c: 0, h: 0 },
+  // ... and other required keys
 };
 
 // Initialize the engine
@@ -76,9 +80,33 @@ The `<Convergence />` component accepts the following props:
 | `syncStart`     | `boolean`     | `true`       | If true, the editor will read the current CSS variables from the DOM on mount, overriding `initialConfig`. |
 | `className`     | `string`      | `undefined`  | Optional CSS class for the wrapper element.                                                                |
 
+## Typography & Layout Support
+
+Convergence UI provides built-in support for managing global typography and layout variables. It injects a style tag to apply chosen fonts and letter-spacing across your application, and outputs common design system layout variables.
+
+### Typography
+- **Sans-Serif**: Inter, Poppins, Roboto, Open Sans.
+- **Serif**: Georgia, Merriweather, Playfair Display, Garamond.
+- **Monospace**: Menlo, JetBrains Mono, Fira Code, Courier.
+- **Letter Spacing**: Fine-grained control with real-world units (px/em).
+
+### Layout
+- **Border Radius** (`--radius`): Controlled in `rem` units for accessible, scalable rounding.
+- **Border Width** (`--border-width`): Controlled in exact `px` units for sharp strokes.
+- **Border Style** (`--border-style`): Toggle between `solid`, `dashed`, and `dotted` borders.
+
+## Presets
+
+The package comes with several curated presets out of the box:
+
+- **Light**: Minimalist, clean light theme.
+- **Dark**: Deep zinc-based dark mode.
+- **Cold**: A professional blue-toned "oceanic" theme.
+- **Warm**: A cozy, red-tinted "sunset" theme.
+
 ## Types
 
-`convergence-ui` is written in TypeScript and exports all necessary types relative to its operation.
+`convergence-ui` is written in TypeScript and exports all necessary types.
 
 ```ts
 import { OklchColor, ThemeConfig, ThemeKey } from "convergence-ui";
@@ -87,10 +115,6 @@ import { OklchColor, ThemeConfig, ThemeKey } from "convergence-ui";
 // { l: number; c: number; h: number; }
 ```
 
-## Presets
-
-The package comes with standard `Light` and `Dark` presets out of the box.
-
 ## License
 
-ISC
+MIT
