@@ -64,18 +64,24 @@ const FONTS = {
     "Poppins, sans-serif",
     "Roboto, sans-serif",
     "Open Sans, sans-serif",
+    "Nunito, sans-serif",
+    "Lato, sans-serif",
   ],
   serif: [
     'Georgia, Cambria, "Times New Roman", Times, serif',
     "Merriweather, serif",
     '"Playfair Display", serif',
     "Garamond, serif",
+    "Lora, serif",
+    '"Cormorant Garamond", serif',
   ],
   mono: [
     'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     '"JetBrains Mono", monospace',
     '"Fira Code", monospace',
     "Courier, monospace",
+    '"Source Code Pro", monospace',
+    '"Cascadia Code", monospace',
   ],
 };
 
@@ -171,7 +177,6 @@ const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
     backgroundColor: "#09090b", // zinc-900
     border: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
     borderRadius: "var(--radius, 8px)",
-    overflow: "hidden",
     boxSizing: "border-box",
   },
   sectionHeader: {
@@ -385,6 +390,8 @@ export function Convergence({
   const [theme, setTheme] = useState<ThemeConfig>(initialConfig);
   const [isOpen, setIsOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const presetsTriggerRef = useRef<HTMLButtonElement>(null);
+  const [presetsDropdownStyle, setPresetsDropdownStyle] = useState<React.CSSProperties>({});
   const [selectedPreset, setSelectedPreset] =
     useState<string>("Select a preset");
   const [collapsedGroups, setCollapsedGroups] = useState<
@@ -485,10 +492,16 @@ export function Convergence({
       "Poppins",
       "Roboto",
       "Open Sans",
+      "Nunito",
+      "Lato",
       "Merriweather",
       "Playfair Display",
+      "Lora",
+      "Cormorant Garamond",
       "JetBrains Mono",
       "Fira Code",
+      "Source Code Pro",
+      "Cascadia Code",
     ];
 
     if (!googleFonts.includes(fontName)) return;
@@ -732,8 +745,30 @@ export function Convergence({
             <Label>Presets</Label>
 
             <button
+              ref={presetsTriggerRef}
               style={COMPONENT_STYLES.selectTrigger}
-              onClick={() => setPresetsOpen(!presetsOpen)}
+              onClick={() => {
+                if (!presetsOpen && presetsTriggerRef.current) {
+                  const rect = presetsTriggerRef.current.getBoundingClientRect();
+                  setPresetsDropdownStyle({
+                    position: "fixed",
+                    top: `${rect.bottom + 4}px`,
+                    left: `${rect.left}px`,
+                    width: `${rect.width}px`,
+                    backgroundColor: "#18181b",
+                    border: "var(--border-width, 1px) var(--border-style, solid) #27272a",
+                    borderRadius: "calc(var(--radius, 8px) - 2px)",
+                    overflow: "hidden",
+                    zIndex: 2147483647,
+                    display: "flex",
+                    flexDirection: "column",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                    maxHeight: "240px",
+                    overflowY: "auto",
+                  });
+                }
+                setPresetsOpen(!presetsOpen);
+              }}
             >
               <span>{selectedPreset}</span>
               <ChevronDown
@@ -748,10 +783,10 @@ export function Convergence({
             {presetsOpen && (
               <>
                 <div
-                  style={{ position: "fixed", inset: 0, zIndex: 9 }}
+                  style={{ position: "fixed", inset: 0, zIndex: 2147483646 }}
                   onClick={() => setPresetsOpen(false)}
                 />
-                <div style={COMPONENT_STYLES.selectDropdown}>
+                <div style={presetsDropdownStyle}>
                   {Object.entries(PRESETS).map(([name, config]) => (
                     <button
                       key={name}
