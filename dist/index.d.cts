@@ -40,11 +40,39 @@ interface ThemeConfig {
     'sidebar-ring': OklchColor;
 }
 type ThemeKey = keyof ThemeConfig;
+/**
+ * Shadow color is expressed as an OKLCH color (the shadow tint).
+ * Opacity is a 0–1 number. The actual shadow string is assembled at export time.
+ */
+interface ShadowColor {
+    l: number;
+    c: number;
+    h: number;
+    /** 0–1 */
+    a: number;
+}
+interface ShadowConfig {
+    'shadow-color': ShadowColor;
+    /** blur/spread tokens — stored as raw CSS strings */
+    'shadow-2xs': string;
+    'shadow-xs': string;
+    'shadow-sm': string;
+    'shadow': string;
+    'shadow-md': string;
+    'shadow-lg': string;
+    'shadow-xl': string;
+    'shadow-2xl': string;
+}
 
 declare const LIGHT_THEME: ThemeConfig;
+declare const LIGHT_SHADOWS: ShadowConfig;
 declare const DARK_THEME: ThemeConfig;
+declare const DARK_SHADOWS: ShadowConfig;
 declare const COLD_THEME: ThemeConfig;
+declare const COLD_SHADOWS: ShadowConfig;
 declare const WARM_THEME: ThemeConfig;
+declare const WARM_SHADOWS: ShadowConfig;
+declare const PRESET_SHADOWS: Record<string, ShadowConfig>;
 declare const PRESETS: Record<string, ThemeConfig>;
 
 interface ConvergenceProps {
@@ -68,4 +96,4 @@ declare class ConvergenceEngine {
     getConfig(): ThemeConfig;
 }
 
-export { COLD_THEME, Convergence, ConvergenceEngine, DARK_THEME, LIGHT_THEME, type OklchColor, PRESETS, type ThemeConfig, type ThemeKey, WARM_THEME };
+export { COLD_SHADOWS, COLD_THEME, Convergence, ConvergenceEngine, DARK_SHADOWS, DARK_THEME, LIGHT_SHADOWS, LIGHT_THEME, type OklchColor, PRESETS, PRESET_SHADOWS, type ShadowColor, type ShadowConfig, type ThemeConfig, type ThemeKey, WARM_SHADOWS, WARM_THEME };

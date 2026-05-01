@@ -8,8 +8,8 @@ import React, {
   useRef,
 } from "react";
 import { ConvergenceEngine } from "../index";
-import { ThemeConfig, ThemeKey, OklchColor } from "../types";
-import { DARK_THEME, PRESETS } from "../defaults";
+import { ThemeConfig, ThemeKey, OklchColor, ShadowConfig } from "../types";
+import { DARK_THEME, DARK_SHADOWS, PRESETS, PRESET_SHADOWS } from "../defaults";
 import { convertHexToOklch, convertOklchToHex } from "../utils/color";
 import { Input, Label, Button, Select } from "./ui/primitives";
 import { Copy, X, ChevronDown } from "lucide-react";
@@ -97,6 +97,18 @@ interface LayoutConfig {
   borderWidth: string;
   borderStyle: string;
 }
+
+/** Shadow token keys in display order */
+const SHADOW_KEYS: (keyof ShadowConfig)[] = [
+  "shadow-2xs",
+  "shadow-xs",
+  "shadow-sm",
+  "shadow",
+  "shadow-md",
+  "shadow-lg",
+  "shadow-xl",
+  "shadow-2xl",
+];
 
 const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
   wrapperOpen: {
@@ -411,6 +423,7 @@ export function Convergence({
     borderWidth: "2px",
     borderStyle: "dashed",
   });
+  const [shadows, setShadows] = useState<ShadowConfig>(DARK_SHADOWS);
 
   const engine = useMemo(() => {
     if (typeof window !== "undefined") {
@@ -441,6 +454,16 @@ export function Convergence({
           borderWidth: computed.getPropertyValue("--border-width") || "2px",
           borderStyle: computed.getPropertyValue("--border-style") || "dashed",
         });
+
+        // Sync shadow tokens from DOM
+        const domShadows: Partial<ShadowConfig> = {};
+        SHADOW_KEYS.forEach((key) => {
+          const val = computed.getPropertyValue(`--${key}`).trim();
+          if (val) (domShadows as Record<string, string>)[key] = val;
+        });
+        if (Object.keys(domShadows).length > 0) {
+          setShadows((prev) => ({ ...prev, ...domShadows }));
+        }
       }
     }
   }, [engine, syncStart]);
@@ -532,6 +555,21 @@ export function Convergence({
     }
   };
 
+  const applyShadowsToDom = (cfg: ShadowConfig) => {
+    if (typeof document === "undefined") return;
+    SHADOW_KEYS.forEach((key) => {
+      document.documentElement.style.setProperty(`--${key}`, cfg[key] as string);
+    });
+  };
+
+  const updateShadow = (key: keyof ShadowConfig, value: string) => {
+    setShadows((prev) => {
+      const next = { ...prev, [key]: value };
+      applyShadowsToDom(next);
+      return next;
+    });
+  };
+
   const updateTypography = (key: keyof TypographyConfig, value: string) => {
     setTypography((prev) => ({ ...prev, [key]: value }));
     if (typeof document !== "undefined") {
@@ -583,37 +621,65 @@ export function Convergence({
   };
 
   const handleExport = () => {
-    const cssLines = (Object.entries(theme) as [ThemeKey, OklchColor][]).map(
-      ([key, value]) => {
-        if (!value) return "";
-        return `  --${key}: oklch(${value.l.toFixed(4)} ${value.c.toFixed(
-          4,
-        )} ${value.h.toFixed(3)});`;
-      },
+    // ── :root color tokens ──────────────────────────────────────────────────
+    const colorLines = (Object.entries(theme) as [ThemeKey, OklchColor][])
+      .filter(([, v]) => !!v)
+      .map(([key, value]) =>
+        `--${key}: oklch(${value.l.toFixed(2)} ${value.c.toFixed(2)} ${value.h.toFixed(2)});`
+      );
+
+    // ── typography ──────────────────────────────────────────────────────────
+    const typographyLines = [
+      `--font-sans: ${typography.fontSans};`,
+      `--font-serif: ${typography.fontSerif};`,
+      `--font-mono: ${typography.fontMono};`,
+      `--letter-spacing: ${typography.letterSpacing};`,
+    ];
+
+    // ── layout ──────────────────────────────────────────────────────────────
+    const layoutLines = [
+      `--radius: ${layout.radius};`,
+      `--border-width: ${layout.borderWidth};`,
+      `--border-style: ${layout.borderStyle};`,
+    ];
+
+    // ── shadows ─────────────────────────────────────────────────────────────
+    const shadowLines = SHADOW_KEYS.map(
+      (key) => `--${key}: ${shadows[key]};`
     );
 
-    const typographyLines = Object.entries(typography).map(([key, value]) => {
-      const cssVar =
-        key === "fontSans"
-          ? "--font-sans"
-          : key === "fontSerif"
-            ? "--font-serif"
-            : key === "fontMono"
-              ? "--font-mono"
-              : "--letter-spacing";
-      return `  ${cssVar}: ${value};`;
-    });
+    // ── @theme inline mapping ────────────────────────────────────────────────
+    const themeInlineLines = [
+      // colors
+      ...colorLines.map((l) => {
+        const key = l.split(":")[0].replace("--", "").trim();
+        return `--color-${key}: var(--${key});`;
+      }),
+      // fonts
+      "--font-sans: var(--font-sans);",
+      "--font-mono: var(--font-mono);",
+      "--font-serif: var(--font-serif);",
+      // radius scale
+      "--radius-sm: calc(var(--radius) - 4px);",
+      "--radius-md: calc(var(--radius) - 2px);",
+      "--radius-lg: var(--radius);",
+      "--radius-xl: calc(var(--radius) + 4px);",
+      // shadows
+      ...SHADOW_KEYS.map((key) => `--${key}: var(--${key});`),
+    ];
 
-    const layoutLines = Object.entries(layout).map(([key, value]) => {
-      const cssVar = key === "radius" ? "--radius" : key === "borderWidth" ? "--border-width" : "--border-style";
-      return `  ${cssVar}: ${value};`;
-    });
+    const indent = (lines: string[]) => lines.map((l) => `  ${l}`).join("\n");
 
-    const cssOutput = `:root {\n${[
-      ...cssLines.filter(Boolean),
-      ...typographyLines,
-      ...layoutLines,
-    ].join("\n")}\n}`;
+    const cssOutput = [
+      `:root {`,
+      indent([...colorLines, ...typographyLines, ...layoutLines, ...shadowLines]),
+      `}`,
+      ``,
+      `@theme inline {`,
+      indent(themeInlineLines),
+      `}`,
+    ].join("\n");
+
     navigator.clipboard.writeText(cssOutput).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -793,6 +859,12 @@ export function Convergence({
                       onClick={() => {
                         updateTheme(config);
                         setSelectedPreset(name);
+                        // Apply matching shadow preset
+                        const presetShadow = PRESET_SHADOWS[name];
+                        if (presetShadow) {
+                          setShadows(presetShadow);
+                          applyShadowsToDom(presetShadow);
+                        }
                         setPresetsOpen(false);
                       }}
                       style={COMPONENT_STYLES.selectItem}
@@ -999,8 +1071,7 @@ export function Convergence({
                   <span style={{ fontWeight: 600, fontSize: "14px" }}>
                     Borders & Spacing
                   </span>
-                </div>
-                <div
+                </div>                <div
                   style={{
                     padding: "16px",
                     display: "flex",
@@ -1179,6 +1250,98 @@ export function Convergence({
                       ))}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Shadows */}
+              <div style={COMPONENT_STYLES.section}>
+                <div style={COMPONENT_STYLES.sectionHeader}>
+                  <span style={{ fontWeight: 600, fontSize: "14px" }}>
+                    Shadows
+                  </span>
+                </div>
+                <div
+                  style={{
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  {/* Shadow color picker */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <Label>Shadow Color</Label>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <div
+                        style={{
+                          ...COMPONENT_STYLES.colorPreview,
+                          background: `oklch(${shadows["shadow-color"].l} ${shadows["shadow-color"].c} ${shadows["shadow-color"].h})`,
+                        }}
+                      >
+                        <input
+                          type="color"
+                          value={convertOklchToHex(shadows["shadow-color"])}
+                          onChange={(e) => {
+                            const oklch = convertHexToOklch(e.target.value);
+                            const sc = { ...oklch, a: shadows["shadow-color"].a };
+                            const sv = (a: number) =>
+                              `oklch(${sc.l.toFixed(2)} ${sc.c.toFixed(2)} ${sc.h.toFixed(2)} / ${a})`;
+                            const next: ShadowConfig = {
+                              "shadow-color": sc,
+                              "shadow-2xs": `0 1px 3px 0px ${sv(0.05)}`,
+                              "shadow-xs":  `0 1px 3px 0px ${sv(0.05)}`,
+                              "shadow-sm":  `0 1px 3px 0px ${sv(0.10)}, 0 1px 2px -1px ${sv(0.10)}`,
+                              "shadow":     `0 1px 3px 0px ${sv(0.10)}, 0 1px 2px -1px ${sv(0.10)}`,
+                              "shadow-md":  `0 1px 3px 0px ${sv(0.10)}, 0 2px 4px -1px ${sv(0.10)}`,
+                              "shadow-lg":  `0 1px 3px 0px ${sv(0.10)}, 0 4px 6px -1px ${sv(0.10)}`,
+                              "shadow-xl":  `0 1px 3px 0px ${sv(0.10)}, 0 8px 10px -1px ${sv(0.10)}`,
+                              "shadow-2xl": `0 1px 3px 0px ${sv(0.25)}`,
+                            };
+                            setShadows(next);
+                            applyShadowsToDom(next);
+                          }}
+                          style={COMPONENT_STYLES.colorInput}
+                        />
+                      </div>
+                      <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
+                        Regenerates all shadow tokens
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Individual shadow token editors */}
+                  {SHADOW_KEYS.map((key) => (
+                    <div key={key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Label style={{ marginBottom: 0 }}>
+                          <code style={{ fontFamily: "monospace", fontSize: "12px" }}>--{key}</code>
+                        </Label>
+                        {/* Live shadow preview swatch */}
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "20px",
+                            borderRadius: "4px",
+                            backgroundColor: "#f4f4f5",
+                            boxShadow: shadows[key] as string,
+                            border: "1px solid #3f3f46",
+                            flexShrink: 0,
+                          }}
+                        />
+                      </div>
+                      <Input
+                        value={shadows[key] as string}
+                        onChange={(e) => updateShadow(key, e.target.value)}
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "11px",
+                          height: "32px",
+                          backgroundColor: "rgba(9, 9, 11, 0.5)",
+                          color: "#a1a1aa",
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
