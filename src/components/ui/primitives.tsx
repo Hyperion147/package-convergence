@@ -1,73 +1,27 @@
 import React, { forwardRef } from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check, ChevronDown } from "lucide-react";
 
-const STYLES = {
-  input: {
-    display: "flex !important",
-    boxSizing: "border-box !important",
-    height: "36px !important",
-    width: "100% !important",
-    borderRadius: "6px !important",
-    border: "1px solid #3f3f46 !important", // zinc-700
-    backgroundColor: "rgba(24, 24, 27, 0.5) !important", // zinc-950/50
-    padding: "4px 12px !important",
-    fontSize: "14px !important",
-    lineHeight: "20px !important",
-    color: "#e4e4e7 !important", // zinc-200
-    outline: "none !important",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif !important",
-    margin: "0 !important",
-  },
-  button: {
-    base: {
-      display: "inline-flex !important",
-      boxSizing: "border-box !important",
-      alignItems: "center !important",
-      justifyContent: "center !important",
-      whiteSpace: "nowrap !important",
-      borderRadius: "6px !important",
-      fontSize: "14px !important",
-      lineHeight: "20px !important",
-      fontWeight: "500 !important",
-      height: "36px !important",
-      padding: "0 16px !important",
-      cursor: "pointer !important",
-      transition: "all 0.2s !important",
-      outline: "none !important",
-      fontFamily: "ui-sans-serif, system-ui, sans-serif !important",
-      margin: "0 !important",
-      textTransform: "none !important",
-    },
-    default: {
-      backgroundColor: "#fafafa !important", // zinc-50
-      color: "#18181b !important", // zinc-900
-      border: "none !important",
-    },
-    outline: {
-      backgroundColor: "transparent !important",
-      border: "1px solid #3f3f46 !important",
-      color: "#e4e4e7 !important",
-    },
-    ghost: {
-      backgroundColor: "transparent !important",
-      border: "none !important",
-      color: "#e4e4e7 !important",
-    },
-    icon: {
-      height: "36px !important",
-      width: "36px !important",
-      padding: "0 !important",
-    },
-  },
-  label: {
-    fontSize: "14px !important",
-    lineHeight: "20px !important",
-    fontWeight: "500 !important",
-    color: "#e4e4e7 !important",
-    marginBottom: "4px !important",
-    display: "block !important",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif !important",
-  },
-} as const;
+const UI_FONT =
+  'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+const mergeStyles = (
+  ...styles: Array<React.CSSProperties | undefined>
+): React.CSSProperties => Object.assign({}, ...styles);
+
+const baseControl: React.CSSProperties = {
+  boxSizing: "border-box",
+  width: "100%",
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  backgroundColor: "rgba(255,255,255,0.03)",
+  color: "#f4f4f5",
+  fontFamily: UI_FONT,
+  fontSize: "14px",
+  lineHeight: "20px",
+  outline: "none",
+  transition: "border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease",
+};
 
 export const Label = forwardRef<
   HTMLLabelElement,
@@ -75,9 +29,19 @@ export const Label = forwardRef<
 >(({ className, style, ...props }, ref) => (
   <label
     ref={ref}
-    // @ts-ignore
-    style={{ ...STYLES.label, ...style }}
     className={className}
+    style={mergeStyles(
+      {
+        display: "block",
+        marginBottom: "6px",
+        fontSize: "12px",
+        lineHeight: "16px",
+        fontWeight: 600,
+        color: "#d4d4d8",
+        fontFamily: UI_FONT,
+      },
+      style,
+    )}
     {...props}
   />
 ));
@@ -86,54 +50,348 @@ Label.displayName = "Label";
 export const Input = forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(({ className, style, ...props }, ref) => {
-  return (
-    <input
-      // @ts-ignore
-      style={{ ...STYLES.input, ...style }}
-      className={className}
-      ref={ref}
-      {...props}
-    />
-  );
-});
+>(({ className, style, ...props }, ref) => (
+  <input
+    ref={ref}
+    className={className}
+    style={mergeStyles(
+      baseControl,
+      {
+        height: "38px",
+        padding: "0 12px",
+      },
+      style,
+    )}
+    {...props}
+  />
+));
 Input.displayName = "Input";
+
+type ButtonVariant = "default" | "secondary" | "outline" | "ghost";
+type ButtonSize = "sm" | "default" | "icon";
 
 export const Button = forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    variant?: "default" | "outline" | "ghost" | "icon";
+    variant?: ButtonVariant;
+    size?: ButtonSize;
   }
->(({ className, variant = "default", style, ...props }, ref) => {
-  const variantStyles =
-    variant === "icon"
-      ? { ...STYLES.button.base, ...STYLES.button.ghost, ...STYLES.button.icon }
-      : { ...STYLES.button.base, ...STYLES.button[variant] };
+>(({ className, variant = "default", size = "default", style, ...props }, ref) => {
+  const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
+    default: {
+      backgroundColor: "#fafafa",
+      color: "#09090b",
+      border: "1px solid #fafafa",
+    },
+    secondary: {
+      backgroundColor: "rgba(255,255,255,0.08)",
+      color: "#f4f4f5",
+      border: "1px solid rgba(255,255,255,0.08)",
+    },
+    outline: {
+      backgroundColor: "transparent",
+      color: "#f4f4f5",
+      border: "1px solid rgba(255,255,255,0.10)",
+    },
+    ghost: {
+      backgroundColor: "transparent",
+      color: "#d4d4d8",
+      border: "1px solid transparent",
+    },
+  };
+
+  const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
+    sm: {
+      height: "32px",
+      padding: "0 12px",
+      fontSize: "12px",
+    },
+    default: {
+      height: "38px",
+      padding: "0 14px",
+      fontSize: "13px",
+    },
+    icon: {
+      width: "38px",
+      height: "38px",
+      padding: 0,
+    },
+  };
 
   return (
     <button
       ref={ref}
-      // @ts-ignore
-      style={{ ...variantStyles, ...style }}
       className={className}
+      style={mergeStyles(
+        {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontWeight: 600,
+          lineHeight: 1,
+          fontFamily: UI_FONT,
+          transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease",
+          whiteSpace: "nowrap",
+        },
+        variantStyles[variant],
+        sizeStyles[size],
+        style,
+      )}
       {...props}
     />
   );
 });
 Button.displayName = "Button";
 
-export const Select = forwardRef<
-  HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement>
->(({ className, style, ...props }, ref) => {
+export const Select = SelectPrimitive.Root;
+export const SelectValue = SelectPrimitive.Value;
+
+export const SelectTrigger = forwardRef<
+  HTMLButtonElement,
+  SelectPrimitive.SelectTriggerProps & { style?: React.CSSProperties }
+>(({ children, style, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    style={mergeStyles(
+      baseControl,
+      {
+        height: "38px",
+        padding: "0 12px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "8px",
+        cursor: "pointer",
+      },
+      style,
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown size={16} color="#a1a1aa" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
+
+export function SelectContent({
+  children,
+  style,
+  position = "popper",
+  ...props
+}: SelectPrimitive.SelectContentProps & { style?: React.CSSProperties }) {
   return (
-    <select
-      ref={ref}
-      // @ts-ignore
-      style={{ ...STYLES.input, cursor: "pointer", ...style }}
-      className={className}
-      {...props}
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content
+        position={position}
+        sideOffset={6}
+        style={mergeStyles(
+          {
+            zIndex: 10000,
+            minWidth: "var(--radix-select-trigger-width)",
+            overflow: "hidden",
+            borderRadius: "10px",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backgroundColor: "#09090b",
+            color: "#f4f4f5",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+          },
+          style,
+        )}
+        {...props}
+      >
+        <SelectPrimitive.Viewport style={{ padding: "6px" }}>
+          {children}
+        </SelectPrimitive.Viewport>
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  );
+}
+
+export const SelectItem = forwardRef<
+  HTMLDivElement,
+  SelectPrimitive.SelectItemProps & { style?: React.CSSProperties }
+>(({ children, style, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    style={mergeStyles(
+      {
+        position: "relative",
+        display: "flex",
+        width: "100%",
+        alignItems: "center",
+        borderRadius: "6px",
+        padding: "8px 10px 8px 34px",
+        fontSize: "13px",
+        lineHeight: "18px",
+        color: "#f4f4f5",
+        cursor: "pointer",
+        userSelect: "none",
+        outline: "none",
+      },
+      style,
+    )}
+    {...props}
+  >
+    <span
+      style={{
+        position: "absolute",
+        left: "10px",
+        display: "inline-flex",
+        width: "16px",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <SelectPrimitive.ItemIndicator>
+        <Check size={14} />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
+
+export function Card({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={mergeStyles(
+        {
+          borderRadius: "10px",
+          border: "1px solid rgba(255,255,255,0.08)",
+          backgroundColor: "#09090b",
+          color: "#f4f4f5",
+        },
+        style,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function CardHeader({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return <div style={mergeStyles({ padding: "14px 14px 0" }, style)}>{children}</div>;
+}
+
+export function CardTitle({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={mergeStyles(
+        {
+          fontSize: "14px",
+          fontWeight: 700,
+          color: "#fafafa",
+          fontFamily: UI_FONT,
+        },
+        style,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function CardDescription({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={mergeStyles(
+        {
+          marginTop: "4px",
+          fontSize: "12px",
+          lineHeight: 1.45,
+          color: "#a1a1aa",
+          fontFamily: UI_FONT,
+        },
+        style,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function CardContent({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return <div style={mergeStyles({ padding: "14px" }, style)}>{children}</div>;
+}
+
+export function Badge({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <span
+      style={mergeStyles(
+        {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          minHeight: "22px",
+          padding: "0 8px",
+          borderRadius: "999px",
+          border: "1px solid rgba(255,255,255,0.08)",
+          backgroundColor: "rgba(255,255,255,0.05)",
+          color: "#d4d4d8",
+          fontSize: "11px",
+          fontWeight: 700,
+          fontFamily: UI_FONT,
+        },
+        style,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function Separator({ style }: { style?: React.CSSProperties }) {
+  return (
+    <div
+      style={mergeStyles(
+        {
+          width: "100%",
+          height: "1px",
+          backgroundColor: "rgba(255,255,255,0.08)",
+        },
+        style,
+      )}
     />
   );
-});
-Select.displayName = "Select";
+}

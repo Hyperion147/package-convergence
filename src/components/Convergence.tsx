@@ -1,64 +1,117 @@
 "use client";
 
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
-import { ConvergenceEngine } from "../index";
-import { ThemeConfig, ThemeKey, OklchColor, ShadowConfig } from "../types";
-import { DARK_THEME, DARK_SHADOWS, PRESETS, PRESET_SHADOWS } from "../defaults";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Layers,
+  Palette,
+  ShieldCheck,
+  Type,
+  X,
+} from "lucide-react";
+import {
+  AccessibilityReport,
+  ConvergenceExportFormat,
+  LayoutConfig,
+  OklchColor,
+  ShadowConfig,
+  ThemeConfig,
+  ThemeDefinition,
+  ThemeKey,
+  TypographyConfig,
+} from "../types";
+import { DEFAULT_THEME_DEFINITION, PRESETS, PRESET_SHADOWS } from "../defaults";
+import { ConvergenceEngine } from "../core/engine";
+import { scoreThemeAccessibility } from "../core/accessibility";
+import { SHADOW_KEYS } from "../core/constants";
 import { convertHexToOklch, convertOklchToHex } from "../utils/color";
-import { Input, Label, Button, Select } from "./ui/primitives";
-import { Copy, X, ChevronDown } from "lucide-react";
+import { ConvergenceMark } from "./ConvergenceMark";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Separator,
+} from "./ui/primitives";
 
 interface ConvergenceProps {
   initialConfig?: ThemeConfig;
+  initialDefinition?: ThemeDefinition;
   className?: string;
   syncStart?: boolean;
 }
 
-const GROUPS = {
-  "Brand Colors": [
-    "primary",
-    "primary-foreground",
-    "secondary",
-    "secondary-foreground",
-    "accent",
-    "accent-foreground",
-  ],
-  "Base Colors": ["background", "foreground", "muted", "muted-foreground"],
-  "UI Colors": [
-    "card",
-    "card-foreground",
-    "popover",
-    "popover-foreground",
-    "border",
-    "input",
-    "ring",
-    "destructive",
-    "destructive-foreground",
-  ],
-  "Charts & Sidebar": [
-    "chart-1",
-    "chart-2",
-    "chart-3",
-    "chart-4",
-    "chart-5",
-    "sidebar",
-    "sidebar-foreground",
-    "sidebar-primary",
-    "sidebar-primary-foreground",
-    "sidebar-accent",
-    "sidebar-accent-foreground",
-    "sidebar-border",
-    "sidebar-ring",
-  ],
-};
+const GROUPS: Array<{
+  name: string;
+  description: string;
+  keys: ThemeKey[];
+}> = [
+  {
+    name: "Brand",
+    description: "Primary, secondary, and accent actions.",
+    keys: [
+      "primary",
+      "primary-foreground",
+      "secondary",
+      "secondary-foreground",
+      "accent",
+      "accent-foreground",
+    ],
+  },
+  {
+    name: "Base",
+    description: "Canvas and text tokens.",
+    keys: ["background", "foreground", "muted", "muted-foreground"],
+  },
+  {
+    name: "Surface",
+    description: "Cards, forms, borders, rings, and alerts.",
+    keys: [
+      "card",
+      "card-foreground",
+      "popover",
+      "popover-foreground",
+      "border",
+      "input",
+      "ring",
+      "destructive",
+      "destructive-foreground",
+    ],
+  },
+  {
+    name: "Product",
+    description: "Charts and sidebar surfaces.",
+    keys: [
+      "chart-1",
+      "chart-2",
+      "chart-3",
+      "chart-4",
+      "chart-5",
+      "sidebar",
+      "sidebar-foreground",
+      "sidebar-primary",
+      "sidebar-primary-foreground",
+      "sidebar-accent",
+      "sidebar-accent-foreground",
+      "sidebar-border",
+      "sidebar-ring",
+    ],
+  },
+];
 
-const FONTS = {
+const FONT_OPTIONS = {
   sans: [
     "Inter, sans-serif",
     "Poppins, sans-serif",
@@ -71,1405 +124,830 @@ const FONTS = {
     'Georgia, Cambria, "Times New Roman", Times, serif',
     "Merriweather, serif",
     '"Playfair Display", serif',
-    "Garamond, serif",
     "Lora, serif",
-    '"Cormorant Garamond", serif',
+    "Garamond, serif",
   ],
   mono: [
     'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     '"JetBrains Mono", monospace',
     '"Fira Code", monospace',
-    "Courier, monospace",
     '"Source Code Pro", monospace',
     '"Cascadia Code", monospace',
   ],
 };
 
-interface TypographyConfig {
-  fontSans: string;
-  fontSerif: string;
-  fontMono: string;
-  letterSpacing: string;
-}
-
-interface LayoutConfig {
-  radius: string;
-  borderWidth: string;
-  borderStyle: string;
-}
-
-/** Shadow token keys in display order */
-const SHADOW_KEYS: (keyof ShadowConfig)[] = [
-  "shadow-2xs",
-  "shadow-xs",
-  "shadow-sm",
-  "shadow",
-  "shadow-md",
-  "shadow-lg",
-  "shadow-xl",
-  "shadow-2xl",
+const EXPORT_OPTIONS: Array<{ label: string; value: ConvergenceExportFormat }> = [
+  { label: "CSS", value: "css" },
+  { label: "Tailwind v4", value: "tailwind-v4" },
+  { label: "JSON", value: "json" },
+  { label: "shadcn/ui", value: "shadcn" },
 ];
 
-const COMPONENT_STYLES: Record<string, React.CSSProperties> = {
-  wrapperOpen: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 9999,
-    display: "flex",
-    justifyContent: "flex-end",
-    pointerEvents: "none",
-  },
-  panel: {
-    position: "relative",
-    width: "100%",
-    maxWidth: "420px",
-    height: "100dvh",
-    backgroundColor: "#18181b", // zinc-950
-    borderLeft: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
-    boxShadow: "-10px 0 40px -15px rgba(0,0,0,0.3)",
-    pointerEvents: "auto",
-    display: "flex",
-    flexDirection: "column",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif",
-    color: "#f4f4f5", // zinc-100
-    boxSizing: "border-box",
-  },
-  header: {
-    padding: "16px 20px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottom: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
-    backgroundColor: "#09090b", // zinc-950
-    boxSizing: "border-box",
-  },
-  content: {
-    padding: "20px",
-    overflowY: "auto",
-    flex: 1,
-    backgroundColor: "rgba(9, 9, 11, 0.5)", // zinc-950/50
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-    boxSizing: "border-box",
-  },
-  triggerButton: {
-    position: "fixed",
-    bottom: "24px",
-    right: "24px",
-    zIndex: 9999,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "40px",
-    backgroundColor: "white",
-    height: "40px",
+const TABS = [
+  { id: "colors", label: "Colors", icon: Palette },
+  { id: "typography", label: "Type", icon: Type },
+  { id: "layout", label: "Layout", icon: Layers },
+  { id: "accessibility", label: "QA", icon: ShieldCheck },
+] as const;
 
-    borderRadius: "9999px",
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-    border: "var(--border-width, 1px) var(--border-style, solid) rgba(255,255,255,0.1)",
-    cursor: "pointer",
-    transition: "transform 0.2s",
-    boxSizing: "border-box",
-    padding: 0,
-    margin: 0,
-  },
-  buttonClass: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
-    borderRadius: "calc(var(--radius, 8px) - 2px)",
-    padding: "4px 0",
-    gap: "8px",
-    height: "36px",
-  },
-  section: {
-    backgroundColor: "#09090b", // zinc-900
-    border: "var(--border-width, 1px) var(--border-style, solid) #27272a", // zinc-800
-    borderRadius: "var(--radius, 8px)",
-    boxSizing: "border-box",
-  },
-  sectionHeader: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    justifyContent: "space-between",
-    padding: "12px 16px",
-    backgroundColor: "rgba(24, 24, 27, 0.5)",
-    cursor: "pointer",
-    border: "none",
-    color: "#f4f4f5",
-    transition: "background-color 0.2s",
-    outline: "none",
-    boxSizing: "border-box",
-    margin: 0,
-  },
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    fontSize: "12px",
-  },
-  colorPreview: {
-    position: "relative",
-    width: "40px",
-    height: "36px",
-    borderRadius: "calc(var(--radius, 8px) - 2px)",
-    border: "var(--border-width, 1px) var(--border-style, solid) #27272a",
-    overflow: "hidden",
-    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-    flexShrink: 0,
-    boxSizing: "border-box",
-  },
-  colorInput: {
-    position: "absolute",
-    inset: 0,
-    opacity: 0,
-    width: "100%",
-    height: "100%",
-    cursor: "pointer",
-    padding: 0,
-    margin: 0,
-    border: "none",
-  },
-  selectTrigger: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    padding: "8px 12px",
-    backgroundColor: "rgba(24, 24, 27, 0.5)",
-    border: "var(--border-width, 1px) var(--border-style, solid) #3f3f46",
-    borderRadius: "calc(var(--radius, 8px) - 2px)",
-    color: "#e4e4e7",
-    fontSize: "14px",
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  selectDropdown: {
-    position: "absolute",
-    top: "calc(100% + 4px)",
-    left: 0,
-    right: 0,
-    backgroundColor: "#18181b",
-    border: "var(--border-width, 1px) var(--border-style, solid) #27272a",
-    borderRadius: "calc(var(--radius, 8px) - 2px)",
-    overflow: "hidden",
-    zIndex: 10,
-    display: "flex",
-    flexDirection: "column",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-  },
-  selectItem: {
-    display: "block",
-    width: "100%",
-    padding: "8px 12px",
-    textAlign: "left",
-    backgroundColor: "transparent",
-    border: "none",
-    color: "#e4e4e7",
-    fontSize: "14px",
-    cursor: "pointer",
-    transition: "background-color 0.2s",
-  },
+type Tab = (typeof TABS)[number]["id"];
+
+const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const buildInitialDefinition = (
+  initialDefinition?: ThemeDefinition,
+  initialConfig?: ThemeConfig,
+): ThemeDefinition => {
+  if (initialDefinition) {
+    return clone(initialDefinition);
+  }
+
+  const next = clone(DEFAULT_THEME_DEFINITION);
+  if (initialConfig) {
+    next.themes.light = clone(initialConfig);
+  }
+  return next;
 };
 
-const getRadiusClass = (rem: number) => {
-  if (rem === 0) return "rounded-none";
-  if (rem < 0.25) return "rounded-sm";
-  if (rem === 0.25) return "rounded";
-  if (rem < 0.5) return "rounded-md";
-  if (rem === 0.5) return "rounded-lg";
-  if (rem <= 0.75) return "rounded-xl";
-  if (rem <= 1) return "rounded-2xl";
-  if (rem <= 1.5) return "rounded-3xl";
-  return "rounded-full";
-};
+const parseOklchString = (input: string): OklchColor | null => {
+  const match = input.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/i);
+  if (!match) {
+    return null;
+  }
 
-const getBorderWidthClass = (px: number) => {
-  if (px === 0) return "border-0";
-  if (px === 1) return "border";
-  if (px === 2) return "border-2";
-  if (px === 4) return "border-4";
-  if (px === 8) return "border-8";
-  return `border-[${px}px]`;
-};
-
-const CustomSelect = ({
-  value,
-  options,
-  onChange,
-}: {
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-
-  const displayValue = value.split(",")[0].replace(/['"]/g, "");
-
-  const handleOpen = () => {
-    if (!isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        position: "fixed",
-        top: `${rect.bottom + 4}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-        ...COMPONENT_STYLES.selectDropdown,
-        zIndex: 2147483647,
-        maxHeight: "240px",
-        overflowY: "auto",
-      });
-    }
-    setIsOpen(!isOpen);
+  return {
+    l: Number.parseFloat(match[1]),
+    c: Number.parseFloat(match[2]),
+    h: Number.parseFloat(match[3]),
   };
+};
+
+const oklch = (color: OklchColor) =>
+  `oklch(${color.l.toFixed(4)} ${color.c.toFixed(4)} ${color.h.toFixed(3)})`;
+
+const loadGoogleFont = (value: string) => {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const fontName = value.split(",")[0].replace(/['"]/g, "").trim();
+  const knownFonts = new Set([
+    "Inter",
+    "Poppins",
+    "Roboto",
+    "Open Sans",
+    "Nunito",
+    "Lato",
+    "Merriweather",
+    "Playfair Display",
+    "Lora",
+    "JetBrains Mono",
+    "Fira Code",
+    "Source Code Pro",
+    "Cascadia Code",
+  ]);
+
+  if (!knownFonts.has(fontName)) {
+    return;
+  }
+
+  const linkId = `convergence-font-${fontName.toLowerCase().replace(/\s+/g, "-")}`;
+  if (document.getElementById(linkId)) {
+    return;
+  }
+
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/\s+/g, "+")}:wght@300;400;500;600;700&display=swap`;
+  document.head.appendChild(link);
+};
+
+const ensureGlobalBridgeStyles = () => {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const styleId = "convergence-global-bridge";
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
+  }
+
+  styleEl.innerHTML = `
+    * { letter-spacing: var(--letter-spacing, 0px); }
+    body, button, input, select, textarea { font-family: var(--font-sans) !important; }
+    code, pre, kbd, samp { font-family: var(--font-mono) !important; }
+    .border { border-width: var(--border-width, 1px) !important; border-style: var(--border-style, solid) !important; }
+    .rounded-sm { border-radius: calc(var(--radius, 0.75rem) - 4px) !important; }
+    .rounded, .rounded-md { border-radius: calc(var(--radius, 0.75rem) - 2px) !important; }
+    .rounded-lg { border-radius: var(--radius, 0.75rem) !important; }
+    .rounded-xl { border-radius: calc(var(--radius, 0.75rem) + 4px) !important; }
+    .rounded-2xl { border-radius: calc(var(--radius, 0.75rem) + 8px) !important; }
+  `;
+};
+
+function ColorRow({
+  themeKey,
+  color,
+  onHexChange,
+  onOklchChange,
+}: {
+  themeKey: ThemeKey;
+  color: OklchColor;
+  onHexChange: (hex: string) => void;
+  onOklchChange: (value: string) => void;
+}) {
+  const hexValue = convertOklchToHex(color);
 
   return (
-    <div style={{ position: "relative" }}>
-      <button
-        ref={triggerRef}
-        style={COMPONENT_STYLES.selectTrigger}
-        onClick={handleOpen}
-      >
-        <span
-          style={{
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {displayValue}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid rgba(255,255,255,0.06)",
+        backgroundColor: "rgba(255,255,255,0.02)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#fafafa" }}>
+          {themeKey.replace(/-/g, " ")}
         </span>
-        <ChevronDown
-          size={14}
+        <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#a1a1aa" }}>{hexValue}</span>
+      </div>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div
           style={{
-            transform: isOpen ? "rotate(180deg)" : "none",
-            transition: "transform 0.2s",
+            width: "42px",
+            height: "36px",
+            borderRadius: "8px",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backgroundColor: hexValue,
+            position: "relative",
+            overflow: "hidden",
             flexShrink: 0,
           }}
-        />
-      </button>
-
-      {isOpen && (
-        <>
-          <div
+        >
+          <input
+            type="color"
+            value={hexValue}
+            onChange={(event) => onHexChange(event.target.value)}
             style={{
-              position: "fixed",
+              position: "absolute",
               inset: 0,
-              zIndex: 2147483646,
-              cursor: "default",
+              opacity: 0,
+              width: "100%",
+              height: "100%",
+              cursor: "pointer",
             }}
-            onClick={() => setIsOpen(false)}
           />
-          <div style={dropdownStyle}>
-            {options.map((option) => (
-              <button
-                key={option}
-                onClick={() => {
-                  onChange(option);
-                  setIsOpen(false);
-                }}
-                style={COMPONENT_STYLES.selectItem}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    "rgba(255,255,255,0.05)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
-              >
-                {option.split(",")[0].replace(/['"]/g, "")}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+        </div>
+        <Input
+          value={`oklch(${color.l.toFixed(2)} ${color.c.toFixed(2)} ${color.h.toFixed(2)})`}
+          onChange={(event) => onOklchChange(event.target.value)}
+          style={{ fontFamily: "monospace", fontSize: "12px" }}
+        />
+      </div>
     </div>
   );
-};
+}
+
+function AccessibilityPanel({ report }: { report: AccessibilityReport }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+        {[
+          ["Score", String(report.overallScore)],
+          ["AA pairs", String(report.passingPairs)],
+          ["Min ratio", report.minimumContrast.toFixed(2)],
+        ].map(([label, value]) => (
+          <Card key={label} style={{ backgroundColor: "#111114" }}>
+            <CardContent style={{ padding: "12px" }}>
+              <div style={{ fontSize: "12px", color: "#a1a1aa" }}>{label}</div>
+              <div style={{ fontSize: "24px", fontWeight: 700 }}>{value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {report.pairs.map((pair) => {
+        const passing = pair.passesAA;
+        return (
+          <Card
+            key={pair.pair}
+            style={{
+              backgroundColor: passing ? "rgba(34,197,94,0.06)" : "rgba(239,68,68,0.06)",
+              borderColor: passing ? "rgba(34,197,94,0.16)" : "rgba(239,68,68,0.16)",
+            }}
+          >
+            <CardContent
+              style={{
+                padding: "12px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 600 }}>{pair.pair}</div>
+                <div style={{ fontSize: "12px", color: "#a1a1aa" }}>
+                  {pair.passesAAA ? "AAA ready" : pair.passesAA ? "Passes AA" : "Below AA"}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {passing && <Check size={14} color="#86efac" />}
+                <span style={{ fontFamily: "monospace", fontSize: "13px" }}>{pair.ratio.toFixed(2)}:1</span>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
 
 export function Convergence({
-  initialConfig = DARK_THEME,
+  initialConfig,
+  initialDefinition,
   className,
   syncStart = true,
 }: ConvergenceProps) {
-  const [theme, setTheme] = useState<ThemeConfig>(initialConfig);
-  const [isOpen, setIsOpen] = useState(false);
-  const [presetsOpen, setPresetsOpen] = useState(false);
-  const presetsTriggerRef = useRef<HTMLButtonElement>(null);
-  const [presetsDropdownStyle, setPresetsDropdownStyle] = useState<React.CSSProperties>({});
-  const [selectedPreset, setSelectedPreset] =
-    useState<string>("Select a preset");
-  const [collapsedGroups, setCollapsedGroups] = useState<
-    Record<string, boolean>
-  >({});
-  const [activeTab, setActiveTab] = useState<"colors" | "typography" | "layout">("colors");
-  const [copied, setCopied] = useState(false);
-  const [typography, setTypography] = useState<TypographyConfig>({
-    fontSans: "Inter, sans-serif",
-    fontSerif: 'Georgia, Cambria, "Times New Roman", Times, serif',
-    fontMono:
-      'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    letterSpacing: "normal",
-  });
-  const [layout, setLayout] = useState<LayoutConfig>({
-    radius: "0rem",
-    borderWidth: "2px",
-    borderStyle: "dashed",
-  });
-  const [shadows, setShadows] = useState<ShadowConfig>(DARK_SHADOWS);
-
-  const engine = useMemo(() => {
-    if (typeof window !== "undefined") {
-      // If syncing from start, do not auto-apply the default theme overwrites
-      return new ConvergenceEngine(initialConfig, { autoApply: !syncStart });
-    }
-    return null;
-  }, [initialConfig, syncStart]);
-
-  useEffect(() => {
-    if (syncStart && engine) {
-      // Read current CSS variables from the DOM
-      const currentTheme = engine.syncFromDom();
-      setTheme(currentTheme);
-
-      if (typeof document !== "undefined") {
-        const computed = getComputedStyle(document.documentElement);
-        setTypography({
-          fontSans: computed.getPropertyValue("--font-sans") || FONTS.sans[0],
-          fontSerif:
-            computed.getPropertyValue("--font-serif") || FONTS.serif[0],
-          fontMono: computed.getPropertyValue("--font-mono") || FONTS.mono[0],
-          letterSpacing:
-            computed.getPropertyValue("--letter-spacing") || "normal",
-        });
-        setLayout({
-          radius: computed.getPropertyValue("--radius") || "0rem",
-          borderWidth: computed.getPropertyValue("--border-width") || "2px",
-          borderStyle: computed.getPropertyValue("--border-style") || "dashed",
-        });
-
-        // Sync shadow tokens from DOM
-        const domShadows: Partial<ShadowConfig> = {};
-        SHADOW_KEYS.forEach((key) => {
-          const val = computed.getPropertyValue(`--${key}`).trim();
-          if (val) (domShadows as Record<string, string>)[key] = val;
-        });
-        if (Object.keys(domShadows).length > 0) {
-          setShadows((prev) => ({ ...prev, ...domShadows }));
-        }
-      }
-    }
-  }, [engine, syncStart]);
-
-  // Inject global styles for letter spacing force
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    const styleId = "convergence-global-typography";
-    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
-
-    if (!styleEl) {
-      styleEl = document.createElement("style");
-      styleEl.id = styleId;
-      document.head.appendChild(styleEl);
-    }
-
-    styleEl.innerHTML = `
-      * {
-        letter-spacing: var(--letter-spacing) !important;
-      }
-      body, button, input, select, textarea {
-        font-family: var(--font-sans) !important;
-      }
-      code, pre, kbd, samp, code * {
-        font-family: var(--font-mono) !important;
-      }
-
-      /* Global Layout Integrations for standard tailwind components */
-      .border { border-width: var(--border-width, 2px) !important; border-style: var(--border-style, dashed) !important; }
-      .rounded-lg { border-radius: var(--radius, 0rem) !important; }
-      .rounded-md, .rounded { border-radius: calc(var(--radius, 0rem) - 2px) !important; }
-      .rounded-sm { border-radius: calc(var(--radius, 0rem) - 4px) !important; }
-      .rounded-xl { border-radius: calc(var(--radius, 0rem) + 4px) !important; }
-      .rounded-2xl { border-radius: calc(var(--radius, 0rem) + 8px) !important; }
-      .rounded-3xl { border-radius: calc(var(--radius, 0rem) + 12px) !important; }
-    `;
-  }, []); // Run once on mount to ensure tag exists, but the var updates naturally
-
-  const loadGoogleFont = (value: string) => {
-    if (typeof document === "undefined") return;
-
-    // Extract font name from string like "Poppins, sans-serif" -> "Poppins"
-    const fontName = value.split(",")[0].replace(/['"]/g, "").trim();
-
-    // List of known Google Fonts
-    const googleFonts = [
-      "Inter",
-      "Poppins",
-      "Roboto",
-      "Open Sans",
-      "Nunito",
-      "Lato",
-      "Merriweather",
-      "Playfair Display",
-      "Lora",
-      "Cormorant Garamond",
-      "JetBrains Mono",
-      "Fira Code",
-      "Source Code Pro",
-      "Cascadia Code",
-    ];
-
-    if (!googleFonts.includes(fontName)) return;
-
-    const linkId = `google-font-${fontName.toLowerCase().replace(/\s+/g, "-")}`;
-    if (document.getElementById(linkId)) return;
-
-    const link = document.createElement("link");
-    link.id = linkId;
-    link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(
-      /\s+/g,
-      "+",
-    )}:wght@300;400;500;600;700&display=swap`;
-    document.head.appendChild(link);
-  };
-
-  const updateLayout = (key: keyof LayoutConfig, value: string) => {
-    setLayout((prev) => ({ ...prev, [key]: value }));
-    if (typeof document !== "undefined") {
-      const cssVar =
-        key === "radius"
-          ? "--radius"
-          : key === "borderWidth"
-            ? "--border-width"
-            : "--border-style";
-      document.documentElement.style.setProperty(cssVar, value);
-    }
-  };
-
-  const applyShadowsToDom = (cfg: ShadowConfig) => {
-    if (typeof document === "undefined") return;
-    SHADOW_KEYS.forEach((key) => {
-      document.documentElement.style.setProperty(`--${key}`, cfg[key] as string);
-    });
-  };
-
-  const updateShadow = (key: keyof ShadowConfig, value: string) => {
-    setShadows((prev) => {
-      const next = { ...prev, [key]: value };
-      applyShadowsToDom(next);
-      return next;
-    });
-  };
-
-  const updateTypography = (key: keyof TypographyConfig, value: string) => {
-    setTypography((prev) => ({ ...prev, [key]: value }));
-    if (typeof document !== "undefined") {
-      const cssVar =
-        key === "fontSans"
-          ? "--font-sans"
-          : key === "fontSerif"
-            ? "--font-serif"
-            : key === "fontMono"
-              ? "--font-mono"
-              : "--letter-spacing";
-      document.documentElement.style.setProperty(cssVar, value);
-
-      if (key !== "letterSpacing") {
-        loadGoogleFont(value);
-      }
-    }
-  };
-
-  const updateTheme = useCallback(
-    (newTheme: ThemeConfig) => {
-      setTheme(newTheme);
-      (Object.keys(newTheme) as ThemeKey[]).forEach((key) => {
-        engine?.setOklch(key, newTheme[key]);
-      });
-    },
-    [engine],
+  const resolvedInitialDefinition = useMemo(
+    () => buildInitialDefinition(initialDefinition, initialConfig),
+    [initialDefinition, initialConfig],
+  );
+  const engine = useMemo(
+    () => new ConvergenceEngine(resolvedInitialDefinition, { autoApply: false }),
+    [resolvedInitialDefinition],
   );
 
-  const updateColorFromHex = (key: ThemeKey, hex: string) => {
-    const oklch = convertHexToOklch(hex);
-    const newTheme = { ...theme, [key]: oklch };
-    updateTheme(newTheme);
-  };
+  const [definition, setDefinition] = useState<ThemeDefinition>(resolvedInitialDefinition);
+  const [isOpen, setIsOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("colors");
+  const [exportFormat, setExportFormat] = useState<ConvergenceExportFormat>("tailwind-v4");
+  const [copied, setCopied] = useState(false);
+  const [openColorGroups, setOpenColorGroups] = useState<Record<string, boolean>>({});
+  const mode = "light" as const;
 
-  const updateColorFromOklchString = (key: ThemeKey, str: string) => {
-    // Expected format "oklch(L C H)"
-    const match = str.match(/oklch\(([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\)/);
-    if (match) {
-      const [_, l, c, h] = match;
-      const newColor = { l: parseFloat(l), c: parseFloat(c), h: parseFloat(h) };
-      const newTheme = { ...theme, [key]: newColor };
-      updateTheme(newTheme);
+  useEffect(() => {
+    ensureGlobalBridgeStyles();
+  }, []);
+
+  useEffect(() => {
+    if (syncStart) {
+      const synced = engine.syncDefinitionFromDom();
+      engine.setAutoApply(true);
+      engine.applyDefinition();
+      setDefinition(synced);
+      return;
     }
+
+    engine.setAutoApply(true);
+    engine.applyDefinition();
+    setDefinition(engine.getDefinition());
+  }, [engine, syncStart]);
+
+  useEffect(() => {
+    loadGoogleFont(definition.typography.fontSans);
+    loadGoogleFont(definition.typography.fontSerif);
+    loadGoogleFont(definition.typography.fontMono);
+  }, [definition.typography]);
+
+  const resolvedTheme = useMemo(() => definition.themes[mode], [definition, mode]);
+
+  const accessibilityReport = useMemo(
+    () => scoreThemeAccessibility(resolvedTheme),
+    [resolvedTheme],
+  );
+
+  const commit = () => {
+    setDefinition(engine.getDefinition());
   };
 
-  const toggleGroup = (group: string) => {
-    setCollapsedGroups((prev) => ({ ...prev, [group]: !prev[group] }));
+  const updateColor = (themeKey: ThemeKey, nextColor: OklchColor) => {
+    engine.setOklch(themeKey, nextColor, { mode });
+    commit();
   };
 
-  const handleExport = () => {
-    // ── :root color tokens ──────────────────────────────────────────────────
-    const colorLines = (Object.entries(theme) as [ThemeKey, OklchColor][])
-      .filter(([, v]) => !!v)
-      .map(([key, value]) =>
-        `--${key}: oklch(${value.l.toFixed(2)} ${value.c.toFixed(2)} ${value.h.toFixed(2)});`
-      );
+  const setPreset = (presetName: string) => {
+    engine.setTheme(mode, clone(PRESETS[presetName]));
+    engine.setShadow("shadow-color", clone(PRESET_SHADOWS[presetName]["shadow-color"]));
+    for (const key of SHADOW_KEYS) {
+      if (key !== "shadow-color") {
+        engine.setShadow(key, PRESET_SHADOWS[presetName][key]);
+      }
+    }
+    commit();
+  };
 
-    // ── typography ──────────────────────────────────────────────────────────
-    const typographyLines = [
-      `--font-sans: ${typography.fontSans};`,
-      `--font-serif: ${typography.fontSerif};`,
-      `--font-mono: ${typography.fontMono};`,
-      `--letter-spacing: ${typography.letterSpacing};`,
-    ];
+  const updateTypography = (patch: Partial<TypographyConfig>) => {
+    engine.setTypography(patch);
+    commit();
+  };
 
-    // ── layout ──────────────────────────────────────────────────────────────
-    const layoutLines = [
-      `--radius: ${layout.radius};`,
-      `--border-width: ${layout.borderWidth};`,
-      `--border-style: ${layout.borderStyle};`,
-    ];
+  const updateLayout = (patch: Partial<LayoutConfig>) => {
+    engine.setLayout(patch);
+    commit();
+  };
 
-    // ── shadows ─────────────────────────────────────────────────────────────
-    const shadowLines = SHADOW_KEYS.map(
-      (key) => `--${key}: ${shadows[key]};`
-    );
+  const updateShadow = <T extends keyof ShadowConfig>(key: T, value: ShadowConfig[T]) => {
+    engine.setShadow(key, value);
+    commit();
+  };
 
-    // ── @theme inline mapping ────────────────────────────────────────────────
-    const themeInlineLines = [
-      // colors
-      ...colorLines.map((l) => {
-        const key = l.split(":")[0].replace("--", "").trim();
-        return `--color-${key}: var(--${key});`;
-      }),
-      // fonts
-      "--font-sans: var(--font-sans);",
-      "--font-mono: var(--font-mono);",
-      "--font-serif: var(--font-serif);",
-      // radius scale
-      "--radius-sm: calc(var(--radius) - 4px);",
-      "--radius-md: calc(var(--radius) - 2px);",
-      "--radius-lg: var(--radius);",
-      "--radius-xl: calc(var(--radius) + 4px);",
-      // shadows
-      ...SHADOW_KEYS.map((key) => `--${key}: var(--${key});`),
-    ];
+  const copyExport = async () => {
+    const content = engine.export(exportFormat);
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
 
-    const indent = (lines: string[]) => lines.map((l) => `  ${l}`).join("\n");
-
-    const cssOutput = [
-      `:root {`,
-      indent([...colorLines, ...typographyLines, ...layoutLines, ...shadowLines]),
-      `}`,
-      ``,
-      `@theme inline {`,
-      indent(themeInlineLines),
-      `}`,
-    ].join("\n");
-
-    navigator.clipboard.writeText(cssOutput).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const toggleColorGroup = (groupName: string) => {
+    setOpenColorGroups((current) => ({
+      ...current,
+      [groupName]: !current[groupName],
+    }));
   };
 
   if (!isOpen) {
     return (
       <button
+        type="button"
+        aria-label="Open theme editor"
+        className={className}
+        style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "24px",
+          zIndex: 9999,
+          width: "50px",
+          height: "50px",
+          borderRadius: "999px",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backgroundColor: "#09090b",
+          color: "#fafafa",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 18px 36px rgba(0,0,0,0.35)",
+          cursor: "pointer",
+        }}
         onClick={() => setIsOpen(true)}
-        style={COMPONENT_STYLES.triggerButton}
-        title="Open Theme Generator"
-        className="group hover:scale-105 active:scale-95"
       >
-        <span style={{ fontSize: "12px", lineHeight: 1 }}>
-          <svg
-            fill="#18181b"
-            viewBox="0 0 512 512"
-            width="24"
-            height="24"
-            version="1.1"
-            xmlSpace="preserve"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlnsXlink="http://www.w3.org/1999/xlink"
-          >
-            <g id="Paint_Roller">
-              <g id="XMLID_244_">
-                <path
-                  d="M249,297.82c0-31.312-23.952-56.82-55.265-56.82h-57.783C108.485,241,85,218.686,85,191.22v-79.701    c0-26.645,19.797-48.565,45.404-50.647c0.327,0.143,0.596,0.267,0.596,0.375V69h24V34h-24v6.859    c-16,0.755-33.499,8.113-46.028,20.93C71.851,75.211,65,92.872,65,111.519v79.701C65,229.673,97.499,261,135.952,261h57.783    C214.061,261,229,277.494,229,297.82V338h-11v52h45v-52h-14V297.82z"
-                  id="XMLID_268_"
-                />
-                <rect height="99" id="XMLID_275_" width="141" x="240" y="2" />
-                <path
-                  d="M194.467,101H220V2h-25.533C184.512,2,175,10.029,175,19.985v4.31v53.879v4.31    C175,92.44,184.512,101,194.467,101z"
-                  id="XMLID_331_"
-                />
-                <path
-                  d="M429.381,2H400v99h29.381C439.337,101,446,92.44,446,82.485v-62.5C446,10.029,439.337,2,429.381,2z"
-                  id="XMLID_355_"
-                />
-                <path
-                  d="M387.628,121H304v59.545c0,9.361,8.256,16.977,17.595,16.977c9.339,0,17.266-7.616,17.266-16.977    c0-5.502,4.068-9.963,9.57-9.963c5.502,0,9.57,4.46,9.57,9.963v32.328c0,9.361,7.161,16.977,16.5,16.977s16.5-7.616,16.5-16.977    v-91.442c0,0.033,0.334,0.318-0.002,0.318C389.43,121.749,388.948,122,387.628,121z"
-                  id="XMLID_356_"
-                />
-                <path
-                  d="M218,487.658c0,12.333,10.168,22.365,22.499,22.365c12.333,0,22.501-10.033,22.501-22.365V410h-45    V487.658z"
-                  id="XMLID_357_"
-                />
-              </g>
-            </g>
-          </svg>
-        </span>
+        <ConvergenceMark size={24} />
       </button>
     );
   }
 
   return (
-    <div style={COMPONENT_STYLES.wrapperOpen} className={className || ""}>
-      <div onClick={() => setIsOpen(false)} />
-      <div style={COMPONENT_STYLES.panel}>
-        {/* Header */}
-        <div style={COMPONENT_STYLES.header}>
-          <span
-            style={{
-              fontWeight: 700,
-              fontSize: "16px",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Convergence UI
-          </span>
-          <button
-            onClick={() => setIsOpen(false)}
-            style={{
-              color: "#a1a1aa",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
-            }}
-          >
-            <X />
-          </button>
+    <div
+      className={className}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        justifyContent: "flex-end",
+        backgroundColor: "rgba(0,0,0,0.18)",
+      }}
+    >
+      <div style={{ flex: 1 }} onClick={() => setIsOpen(false)} />
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "500px",
+          height: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "#09090b",
+          color: "#f4f4f5",
+          borderLeft: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "-24px 0 64px rgba(0,0,0,0.36)",
+        }}
+      >
+        <div style={{ padding: "16px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontSize: "16px", fontWeight: 700 }}>Theme Editor</div>
+              <div style={{ fontSize: "12px", color: "#a1a1aa", marginTop: "4px" }}>
+                Edit semantic tokens and export the result.
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+              <X size={16} />
+            </Button>
+          </div>
         </div>
 
-        {/* Actions Area */}
-        <div style={COMPONENT_STYLES.content}>
-          <div style={{ position: "relative" }}>
-            <Button
-              style={COMPONENT_STYLES.buttonClass}
-              variant="outline"
-              onClick={handleExport}
-            >
-              <Copy size={16} /> Copy CSS Variables
-            </Button>
-            {copied && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 4px)",
-                  left: "90%",
-                  transform: "translateX(-50%)",
-                  backgroundColor: "#27272a",
-                  color: "#f4f4f5",
-                  padding: "4px 8px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-                  zIndex: 20,
-                  pointerEvents: "none",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Copied 🎉
+        <div
+          style={{
+            padding: "16px",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            backgroundColor: "#0d0d10",
+          }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Workspace</CardTitle>
+              <CardDescription>
+                Presets and export format live here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <div>
+                  <Label>Export format</Label>
+                  <Select
+                    value={exportFormat}
+                    onValueChange={(value) => setExportFormat(value as ConvergenceExportFormat)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPORT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Presets */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              position: "relative",
-            }}
-          >
-            <Label>Presets</Label>
-
-            <button
-              ref={presetsTriggerRef}
-              style={COMPONENT_STYLES.selectTrigger}
-              onClick={() => {
-                if (!presetsOpen && presetsTriggerRef.current) {
-                  const rect = presetsTriggerRef.current.getBoundingClientRect();
-                  setPresetsDropdownStyle({
-                    position: "fixed",
-                    top: `${rect.bottom + 4}px`,
-                    left: `${rect.left}px`,
-                    width: `${rect.width}px`,
-                    backgroundColor: "#18181b",
-                    border: "var(--border-width, 1px) var(--border-style, solid) #27272a",
-                    borderRadius: "calc(var(--radius, 8px) - 2px)",
-                    overflow: "hidden",
-                    zIndex: 2147483647,
-                    display: "flex",
-                    flexDirection: "column",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-                    maxHeight: "240px",
-                    overflowY: "auto",
-                  });
-                }
-                setPresetsOpen(!presetsOpen);
-              }}
-            >
-              <span>{selectedPreset}</span>
-              <ChevronDown
-                size={14}
-                style={{
-                  transform: presetsOpen ? "rotate(180deg)" : "none",
-                  transition: "transform 0.2s",
-                }}
-              />
-            </button>
-
-            {presetsOpen && (
-              <>
-                <div
-                  style={{ position: "fixed", inset: 0, zIndex: 2147483646 }}
-                  onClick={() => setPresetsOpen(false)}
-                />
-                <div style={presetsDropdownStyle}>
-                  {Object.entries(PRESETS).map(([name, config]) => (
-                    <button
-                      key={name}
-                      onClick={() => {
-                        updateTheme(config);
-                        setSelectedPreset(name);
-                        // Apply matching shadow preset
-                        const presetShadow = PRESET_SHADOWS[name];
-                        if (presetShadow) {
-                          setShadows(presetShadow);
-                          applyShadowsToDom(presetShadow);
-                        }
-                        setPresetsOpen(false);
-                      }}
-                      style={COMPONENT_STYLES.selectItem}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "rgba(255,255,255,0.05)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = "transparent")
-                      }
-                    >
-                      {name}
-                    </button>
-                  ))}
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: "180px" }}>
+                  <Select onValueChange={setPreset}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Apply preset" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(PRESETS).map((presetName) => (
+                        <SelectItem key={presetName} value={presetName}>
+                          {presetName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
 
-          {/* Tabs */}
-          <div
-            style={{
-              display: "flex",
-              padding: "4px",
-              backgroundColor: "rgba(255,255,255,0.05)",
-              borderRadius: "8px",
-              gap: "4px",
-            }}
-          >
-            <button
-              onClick={() => setActiveTab("colors")}
-              style={{
-                flex: 1,
-                padding: "4px 0",
-                fontSize: "12px",
-                fontWeight: 500,
-                backgroundColor:
-                  activeTab === "colors" ? "#09090b" : "transparent",
-                borderRadius: "6px",
-                color: activeTab === "colors" ? "#f4f4f5" : "#a1a1aa",
-                border: "none",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              Colors
-            </button>
-            <button
-              onClick={() => setActiveTab("typography")}
-              style={{
-                flex: 1,
-                padding: "4px 0",
-                fontSize: "12px",
-                fontWeight: 500,
-                backgroundColor:
-                  activeTab === "typography" ? "#09090b" : "transparent",
-                borderRadius: "6px",
-                color: activeTab === "typography" ? "#f4f4f5" : "#a1a1aa",
-                border: "none",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              Typography
-            </button>
-            <button
-              onClick={() => setActiveTab("layout")}
-              style={{
-                flex: 1,
-                padding: "4px 0",
-                fontSize: "12px",
-                fontWeight: 500,
-                backgroundColor:
-                  activeTab === "layout" ? "#09090b" : "transparent",
-                borderRadius: "6px",
-                color: activeTab === "layout" ? "#f4f4f5" : "#a1a1aa",
-                border: "none",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              Layout
-            </button>
-          </div>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <Button className="w-full" onClick={copyExport}>
+                  <Copy size={14} />
+                  {copied ? "Copied" : "Copy export"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Typography Content */}
-          {activeTab === "typography" && (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              <div style={COMPONENT_STYLES.section}>
-                <div style={COMPONENT_STYLES.sectionHeader}>
-                  <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                    Fonts & Spacing
-                  </span>
-                </div>
-                <div
-                  style={{
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
-                  }}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+            {TABS.map((tabOption) => {
+              const Icon = tabOption.icon;
+              return (
+                <Button
+                  key={tabOption.id}
+                  variant={tab === tabOption.id ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => setTab(tabOption.id)}
+                  style={{ width: "100%", justifyContent: "center" }}
                 >
-                  <div className="flex flex-col gap-2">
-                    <Label>Sans-Serif Font</Label>
-                    <CustomSelect
-                      value={typography.fontSans}
-                      options={FONTS.sans}
-                      onChange={(val) => updateTypography("fontSans", val)}
-                    />
-                  </div>
+                  <Icon size={14} />
+                  {tabOption.label}
+                </Button>
+              );
+            })}
+          </div>
 
-                  <div className="flex flex-col gap-2">
-                    <Label>Serif Font</Label>
-                    <CustomSelect
-                      value={typography.fontSerif}
-                      options={FONTS.serif}
-                      onChange={(val) => updateTypography("fontSerif", val)}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Label>Monospace Font</Label>
-                    <CustomSelect
-                      value={typography.fontMono}
-                      options={FONTS.mono}
-                      onChange={(val) => updateTypography("fontMono", val)}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <div
+          {tab === "colors" && (
+            <>
+              {GROUPS.map((group) => (
+                <Card key={group.name}>
+                  <button
+                    type="button"
+                    onClick={() => toggleColorGroup(group.name)}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      background: "transparent",
+                      border: "none",
+                      color: "inherit",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <CardHeader
                       style={{
                         display: "flex",
+                        flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        gap: "12px",
+                        paddingBottom: openColorGroups[group.name] ? "10px" : "14px",
                       }}
                     >
-                      <Label>Letter Spacing</Label>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center", // Fixed alignment
-                          gap: "8px",
-                        }}
-                      >
-                        <Input
-                          value={
-                            typography.letterSpacing === "normal"
-                              ? "0"
-                              : parseFloat(typography.letterSpacing).toString()
-                          }
-                          onChange={(e) =>
-                            updateTypography(
-                              "letterSpacing",
-                              `${e.target.value}px`,
-                            )
-                          }
+                      <div>
+                        <CardTitle>{group.name}</CardTitle>
+                        <CardDescription>{group.description}</CardDescription>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <Badge>{group.keys.length} tokens</Badge>
+                        <ChevronDown
+                          size={16}
                           style={{
-                            width: "60px",
-                            height: "28px",
-                            padding: "0 8px",
+                            color: "#a1a1aa",
+                            transform: openColorGroups[group.name] ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 160ms ease",
                           }}
                         />
-                        <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
-                          px
-                        </span>
                       </div>
-                    </div>
-                    <input
+                    </CardHeader>
+                  </button>
+                  {openColorGroups[group.name] && (
+                    <CardContent style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {group.keys.map((themeKey) => (
+                        <ColorRow
+                          key={themeKey}
+                          themeKey={themeKey}
+                          color={resolvedTheme[themeKey]}
+                          onHexChange={(hex) => updateColor(themeKey, convertHexToOklch(hex))}
+                          onOklchChange={(raw) => {
+                            const parsed = parseOklchString(raw);
+                            if (parsed) {
+                              updateColor(themeKey, parsed);
+                            }
+                          }}
+                        />
+                      ))}
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </>
+          )}
+
+          {tab === "typography" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Typography</CardTitle>
+                <CardDescription>
+                  Update fonts and spacing for the current theme.
+                </CardDescription>
+              </CardHeader>
+              <CardContent style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <Label>Sans</Label>
+                    <Select
+                      value={definition.typography.fontSans}
+                      onValueChange={(value) => updateTypography({ fontSans: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FONT_OPTIONS.sans.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option.split(",")[0].replace(/['"]/g, "")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Serif</Label>
+                    <Select
+                      value={definition.typography.fontSerif}
+                      onValueChange={(value) => updateTypography({ fontSerif: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FONT_OPTIONS.serif.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option.split(",")[0].replace(/['"]/g, "")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Monospace</Label>
+                  <Select
+                    value={definition.typography.fontMono}
+                    onValueChange={(value) => updateTypography({ fontMono: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_OPTIONS.mono.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option.split(",")[0].replace(/['"]/g, "")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Letter spacing</Label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <Input
                       type="range"
                       min="-2"
                       max="10"
                       step="0.1"
-                      value={
-                        typography.letterSpacing === "normal"
-                          ? 0
-                          : parseFloat(typography.letterSpacing) || 0
-                      }
-                      onChange={(e) =>
-                        updateTypography("letterSpacing", `${e.target.value}px`)
-                      }
-                      style={{
-                        width: "100%",
-                        accentColor: "white",
-                        height: "4px", // Slightly thicker for better visibility
-                        cursor: "pointer",
-                      }}
+                      value={Number.parseFloat(definition.typography.letterSpacing) || 0}
+                      onChange={(event) => updateTypography({ letterSpacing: `${event.target.value}px` })}
+                      style={{ padding: 0, backgroundColor: "transparent", border: "none" }}
+                    />
+                    <Input
+                      value={Number.parseFloat(definition.typography.letterSpacing) || 0}
+                      onChange={(event) => updateTypography({ letterSpacing: `${event.target.value}px` })}
+                      style={{ width: "72px" }}
                     />
                   </div>
                 </div>
-              </div>
-            </div>
+
+                <Separator />
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ fontSize: "18px", fontWeight: 700 }}>Readable, quiet, and adaptable.</div>
+                  <div style={{ fontSize: "13px", color: "#a1a1aa" }}>
+                    Use the host app itself to judge hierarchy and rhythm while you edit.
+                  </div>
+                  <code
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      backgroundColor: "rgba(255,255,255,0.03)",
+                      fontSize: "12px",
+                    }}
+                  >
+                    export theme --format {exportFormat}
+                  </code>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Layout Content */}
-          {activeTab === "layout" && (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              <div style={COMPONENT_STYLES.section}>
-                <div style={COMPONENT_STYLES.sectionHeader}>
-                  <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                    Borders & Spacing
-                  </span>
-                </div>                <div
-                  style={{
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "24px",
-                  }}
-                >
-                  <div className="flex flex-col gap-2">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
+          {tab === "layout" && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Layout tokens</CardTitle>
+                  <CardDescription>Radius and borders should stay stable across common UI surfaces.</CardDescription>
+                </CardHeader>
+                <CardContent style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <Label>Radius</Label>
+                      <Input
+                        value={definition.layout.radius}
+                        onChange={(event) => updateLayout({ radius: event.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Border width</Label>
+                      <Input
+                        value={definition.layout.borderWidth}
+                        onChange={(event) => updateLayout({ borderWidth: event.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Border style</Label>
+                    <Select
+                      value={definition.layout.borderStyle}
+                      onValueChange={(value) => updateLayout({ borderStyle: value })}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Label>Border Radius</Label>
-                        <span
-                          style={{
-                            fontSize: "10px",
-                            backgroundColor: "#27272a",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            color: "#a1a1aa",
-                            fontFamily: "monospace"
-                          }}
-                        >
-                          {getRadiusClass(parseFloat(layout.radius) || 0)}
-                        </span>
-                      </div>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="solid">solid</SelectItem>
+                        <SelectItem value="dashed">dashed</SelectItem>
+                        <SelectItem value="dotted">dotted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                    {[0, 1, 2].map((index) => (
                       <div
+                        key={index}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
+                          height: "72px",
+                          borderRadius: definition.layout.radius,
+                          border: `${definition.layout.borderWidth} ${definition.layout.borderStyle} ${oklch(resolvedTheme.border)}`,
+                          backgroundColor: index === 1 ? oklch(resolvedTheme.card) : "rgba(255,255,255,0.03)",
+                          boxShadow: index === 2 ? definition.shadows["shadow-md"] : definition.shadows["shadow-xs"],
                         }}
-                      >
-                        <Input
-                          value={parseFloat(layout.radius) || 0}
-                          onChange={(e) =>
-                            updateLayout("radius", `${e.target.value}rem`)
-                          }
-                          style={{
-                            width: "60px",
-                            height: "28px",
-                            padding: "0 8px",
-                          }}
-                        />
-                        <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
-                          rem
-                        </span>
-                      </div>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.05"
-                      value={parseFloat(layout.radius) || 0}
-                      onChange={(e) =>
-                        updateLayout("radius", `${e.target.value}rem`)
-                      }
-                      style={{
-                        width: "100%",
-                        accentColor: "white",
-                        height: "4px",
-                        cursor: "pointer",
-                      }}
-                    />
+                      />
+                    ))}
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex flex-col gap-2">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Label>Border Width</Label>
-                        <span
-                          style={{
-                            fontSize: "10px",
-                            backgroundColor: "#27272a",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            color: "#a1a1aa",
-                            fontFamily: "monospace"
-                          }}
-                        >
-                          {getBorderWidthClass(parseFloat(layout.borderWidth) || 0)}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <Input
-                          value={parseFloat(layout.borderWidth) || 0}
-                          onChange={(e) =>
-                            updateLayout("borderWidth", `${e.target.value}px`)
-                          }
-                          style={{
-                            width: "60px",
-                            height: "28px",
-                            padding: "0 8px",
-                          }}
-                        />
-                        <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
-                          px
-                        </span>
-                      </div>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      step="1"
-                      value={parseFloat(layout.borderWidth) || 0}
-                      onChange={(e) =>
-                        updateLayout("borderWidth", `${e.target.value}px`)
-                      }
-                      style={{
-                        width: "100%",
-                        accentColor: "white",
-                        height: "4px",
-                        cursor: "pointer",
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Label>Border Style</Label>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        padding: "4px",
-                        backgroundColor: "rgba(255,255,255,0.05)",
-                        borderRadius: "8px",
-                        gap: "4px",
-                      }}
-                    >
-                      {["solid", "dashed", "dotted"].map((style) => (
-                        <button
-                          key={style}
-                          onClick={() => updateLayout("borderStyle", style)}
-                          style={{
-                            flex: 1,
-                            padding: "6px 0",
-                            fontSize: "12px",
-                            fontWeight: 500,
-                            backgroundColor:
-                              layout.borderStyle === style ? "#09090b" : "transparent",
-                            borderRadius: "6px",
-                            color: layout.borderStyle === style ? "#f4f4f5" : "#a1a1aa",
-                            border: layout.borderStyle === style ? "1px solid #27272a" : "1px solid transparent",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            textTransform: "capitalize"
-                          }}
-                        >
-                          {style}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Shadows */}
-              <div style={COMPONENT_STYLES.section}>
-                <div style={COMPONENT_STYLES.sectionHeader}>
-                  <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                    Shadows
-                  </span>
-                </div>
-                <div
-                  style={{
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  {/* Shadow color picker */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <Label>Shadow Color</Label>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Shadows</CardTitle>
+                  <CardDescription>Adjust the tint, then tune each token if you need more control.</CardDescription>
+                </CardHeader>
+                <CardContent style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div>
+                    <Label>Shadow tint</Label>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                       <div
                         style={{
-                          ...COMPONENT_STYLES.colorPreview,
-                          background: `oklch(${shadows["shadow-color"].l} ${shadows["shadow-color"].c} ${shadows["shadow-color"].h})`,
+                          width: "42px",
+                          height: "36px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          backgroundColor: convertOklchToHex(definition.shadows["shadow-color"]),
+                          position: "relative",
+                          overflow: "hidden",
+                          flexShrink: 0,
                         }}
                       >
                         <input
                           type="color"
-                          value={convertOklchToHex(shadows["shadow-color"])}
-                          onChange={(e) => {
-                            const oklch = convertHexToOklch(e.target.value);
-                            const sc = { ...oklch, a: shadows["shadow-color"].a };
-                            const sv = (a: number) =>
-                              `oklch(${sc.l.toFixed(2)} ${sc.c.toFixed(2)} ${sc.h.toFixed(2)} / ${a})`;
-                            const next: ShadowConfig = {
-                              "shadow-color": sc,
-                              "shadow-2xs": `0 1px 3px 0px ${sv(0.05)}`,
-                              "shadow-xs":  `0 1px 3px 0px ${sv(0.05)}`,
-                              "shadow-sm":  `0 1px 3px 0px ${sv(0.10)}, 0 1px 2px -1px ${sv(0.10)}`,
-                              "shadow":     `0 1px 3px 0px ${sv(0.10)}, 0 1px 2px -1px ${sv(0.10)}`,
-                              "shadow-md":  `0 1px 3px 0px ${sv(0.10)}, 0 2px 4px -1px ${sv(0.10)}`,
-                              "shadow-lg":  `0 1px 3px 0px ${sv(0.10)}, 0 4px 6px -1px ${sv(0.10)}`,
-                              "shadow-xl":  `0 1px 3px 0px ${sv(0.10)}, 0 8px 10px -1px ${sv(0.10)}`,
-                              "shadow-2xl": `0 1px 3px 0px ${sv(0.25)}`,
-                            };
-                            setShadows(next);
-                            applyShadowsToDom(next);
+                          value={convertOklchToHex(definition.shadows["shadow-color"])}
+                          onChange={(event) => {
+                            const base = convertHexToOklch(event.target.value);
+                            updateShadow("shadow-color", {
+                              ...base,
+                              a: definition.shadows["shadow-color"].a,
+                            });
                           }}
-                          style={COMPONENT_STYLES.colorInput}
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            opacity: 0,
+                            width: "100%",
+                            height: "100%",
+                            cursor: "pointer",
+                          }}
                         />
                       </div>
-                      <span style={{ fontSize: "12px", color: "#a1a1aa" }}>
-                        Regenerates all shadow tokens
-                      </span>
+                      <div style={{ fontSize: "12px", color: "#a1a1aa" }}>
+                        Keep shadows neutral or give them a slight brand tint.
+                      </div>
                     </div>
                   </div>
 
-                  {/* Individual shadow token editors */}
-                  {SHADOW_KEYS.map((key) => (
-                    <div key={key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <Label style={{ marginBottom: 0 }}>
-                          <code style={{ fontFamily: "monospace", fontSize: "12px" }}>--{key}</code>
-                        </Label>
-                        {/* Live shadow preview swatch */}
+                  {SHADOW_KEYS.filter((key) => key !== "shadow-color").map((shadowKey) => (
+                    <div key={shadowKey}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", gap: "8px" }}>
+                        <Label style={{ marginBottom: 0 }}>{shadowKey}</Label>
                         <div
                           style={{
-                            width: "32px",
-                            height: "20px",
-                            borderRadius: "4px",
+                            width: "40px",
+                            height: "24px",
+                            borderRadius: "6px",
                             backgroundColor: "#f4f4f5",
-                            boxShadow: shadows[key] as string,
-                            border: "1px solid #3f3f46",
-                            flexShrink: 0,
+                            boxShadow: definition.shadows[shadowKey],
+                            border: "1px solid rgba(255,255,255,0.08)",
                           }}
                         />
                       </div>
                       <Input
-                        value={shadows[key] as string}
-                        onChange={(e) => updateShadow(key, e.target.value)}
-                        style={{
-                          fontFamily: "monospace",
-                          fontSize: "11px",
-                          height: "32px",
-                          backgroundColor: "rgba(9, 9, 11, 0.5)",
-                          color: "#a1a1aa",
-                        }}
+                        value={definition.shadows[shadowKey]}
+                        onChange={(event) => updateShadow(shadowKey, event.target.value)}
+                        style={{ fontFamily: "monospace", fontSize: "11px" }}
                       />
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
+                </CardContent>
+              </Card>
+            </>
           )}
 
-          {/* Colors List */}
-          {activeTab === "colors" && (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              {Object.entries(GROUPS).map(([groupName, keys]) => {
-                const isCollapsed = collapsedGroups[groupName];
-                return (
-                  <div key={groupName} style={COMPONENT_STYLES.section}>
-                    <button
-                      onClick={() => toggleGroup(groupName)}
-                      style={COMPONENT_STYLES.sectionHeader}
-                    >
-                      <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                        {groupName}
-                      </span>
-                      <span
-                        style={{
-                          transition: "transform 0.2s",
-                          transform: isCollapsed
-                            ? "rotate(0deg)"
-                            : "rotate(180deg)",
-                          color: "#a1a1aa",
-                          display: "flex",
-                        }}
-                      >
-                        <ChevronDown />
-                      </span>
-                    </button>
-
-                    {!isCollapsed && (
-                      <div
-                        style={{
-                          padding: "16px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "24px",
-                        }}
-                      >
-                        {keys.map((key) => {
-                          const themeKey = key as ThemeKey;
-                          const color = theme[themeKey];
-                          if (!color) return null;
-                          const hexValue = convertOklchToHex(color);
-                          const oklchString = `oklch(${color.l.toFixed(
-                            2,
-                          )} ${color.c.toFixed(2)} ${color.h.toFixed(2)})`;
-
-                          return (
-                            <div
-                              key={key}
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <div style={COMPONENT_STYLES.row}>
-                                <span
-                                  style={{
-                                    fontWeight: 500,
-                                    textTransform: "capitalize",
-                                    color: "#e4e4e7",
-                                  }}
-                                >
-                                  {key.replace(/-/g, " ")}
-                                </span>
-                                <span
-                                  style={{
-                                    fontFamily: "monospace",
-                                    color: "#a1a1aa",
-                                  }}
-                                >
-                                  {hexValue}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", gap: "8px" }}>
-                                <div style={COMPONENT_STYLES.colorPreview}>
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      inset: 0,
-                                      backgroundColor: hexValue,
-                                    }}
-                                  />
-                                  <input
-                                    type="color"
-                                    value={hexValue}
-                                    onChange={(e) =>
-                                      updateColorFromHex(
-                                        themeKey,
-                                        e.target.value,
-                                      )
-                                    }
-                                    style={COMPONENT_STYLES.colorInput}
-                                  />
-                                </div>
-                                <Input
-                                  value={oklchString}
-                                  onChange={(e) =>
-                                    updateColorFromOklchString(
-                                      themeKey,
-                                      e.target.value,
-                                    )
-                                  }
-                                  style={{
-                                    fontFamily: "monospace",
-                                    fontSize: "12px",
-                                    height: "36px",
-                                    backgroundColor: "rgba(9, 9, 11, 0.5)",
-                                    color: "#a1a1aa",
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+          {tab === "accessibility" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Accessibility QA</CardTitle>
+                <CardDescription>Contrast is calculated from the currently edited theme.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AccessibilityPanel report={accessibilityReport} />
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
