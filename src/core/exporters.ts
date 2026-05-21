@@ -13,7 +13,7 @@ import {
 } from "../types";
 import { SHADOW_KEYS, THEME_KEYS } from "./constants";
 import { DEFAULT_THEME_DEFINITION } from "../defaults";
-import { mergeThemeConfig } from "./schema";
+import { assertThemeDefinition, mergeThemeConfig } from "./schema";
 import { parseCssColor } from "../utils/color";
 
 const DEFAULT_SELECTORS: Record<ThemeMode, string> = {
@@ -192,6 +192,12 @@ const parseVarBlock = (css: string, selector: string) => {
   return matches.map((match) => match[1]).join("\n");
 };
 
+const stripVarBlock = (css: string, selector: string) => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`${escaped}\\s*\\{[\\s\\S]*?\\}`, "g");
+  return css.replace(regex, "");
+};
+
 const readVariables = (blockContent: string) => {
   const entries = Array.from(blockContent.matchAll(/--([a-z0-9-]+)\s*:\s*([^;]+);/gi));
   return new Map(entries.map((entry) => [entry[1], entry[2].trim()]));
@@ -200,7 +206,7 @@ const readVariables = (blockContent: string) => {
 const applyThemeVariables = (base: ThemeConfig, variables: Map<string, string>): ThemeConfig => {
   const next = { ...base } as ThemeConfig;
   for (const key of THEME_KEYS) {
-    const value = variables.get(key);
+    const value = variables.get(key) ?? variables.get(`color-${key}`);
     if (!value) {
       continue;
     }
@@ -254,7 +260,11 @@ export const cssVariablesImporter: ThemeImporter = {
     const base = options.baseDefinition ?? DEFAULT_THEME_DEFINITION;
     const rootBlock = parseVarBlock(source, ":root");
     const darkBlock = parseVarBlock(source, ".dark");
-    const rootVariables = readVariables(rootBlock);
+    const directSource = stripVarBlock(stripVarBlock(source, ":root"), ".dark");
+    const directVariables = readVariables(directSource);
+    const rootVariables = new Map<string, string>();
+    directVariables.forEach((value, key) => rootVariables.set(key, value));
+    readVariables(rootBlock).forEach((value, key) => rootVariables.set(key, value));
     const darkVariables = readVariables(darkBlock);
 
     return {
@@ -280,7 +290,7 @@ export const importThemeDefinition = (
   baseDefinition = DEFAULT_THEME_DEFINITION,
 ) => {
   if (type === "json") {
-    return JSON.parse(source) as ThemeDefinition;
+    return assertThemeDefinition(JSON.parse(source) as ThemeDefinition);
   }
 
   return cssVariablesImporter.import(source, { baseDefinition });

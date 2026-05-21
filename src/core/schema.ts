@@ -201,18 +201,32 @@ export const validateThemeDefinition = (
     return { valid: false, value, issues };
   }
 
-  validateThemeConfig(value.themes.light).issues.forEach((issue) =>
-    issues.push({
-      ...issue,
-      path: issue.path.replace("themes.", "themes.light."),
-    }),
-  );
-  validateThemeConfig(value.themes.dark).issues.forEach((issue) =>
-    issues.push({
-      ...issue,
-      path: issue.path.replace("themes.", "themes.dark."),
-    }),
-  );
+  if (!value.themes || typeof value.themes !== "object") {
+    issues.push({ path: "themes", message: "Expected light and dark theme objects.", severity: "error" });
+  } else {
+    const themes = value.themes as unknown as Record<string, ThemeConfig>;
+    if (!themes.light) {
+      issues.push({ path: "themes.light", message: "Expected a light theme object.", severity: "error" });
+    } else {
+      validateThemeConfig(themes.light).issues.forEach((issue) =>
+        issues.push({
+          ...issue,
+          path: issue.path.replace("themes.", "themes.light."),
+        }),
+      );
+    }
+
+    if (!themes.dark) {
+      issues.push({ path: "themes.dark", message: "Expected a dark theme object.", severity: "error" });
+    } else {
+      validateThemeConfig(themes.dark).issues.forEach((issue) =>
+        issues.push({
+          ...issue,
+          path: issue.path.replace("themes.", "themes.dark."),
+        }),
+      );
+    }
+  }
 
   validateTypography(value.typography, issues);
   validateLayout(value.layout, issues);

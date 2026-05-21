@@ -1,7 +1,7 @@
 {
   "name": "convergence-ui",
   "version": "2.0.0",
-  "description": "A headless OKLCH design token engine and React theme editor for Tailwind v4, shadcn/ui, and multi-theme apps.",
+  "description": "A headless OKLCH theme engine and React editor for semantic design tokens, Tailwind v4 themes, and modern React apps.",
   "license": "MIT",
   "author": "Hyperion147",
   "type": "module",
@@ -47,8 +47,9 @@
     "design-system",
     "color-palette",
     "tailwind-v4",
-    "shadcn-ui",
-    "ui-tool"
+    "theme-editor",
+    "ui-tool",
+    "react-theme"
   ],
   "bugs": {
     "url": "https://github.com/Hyperion147/package-convergence/issues"

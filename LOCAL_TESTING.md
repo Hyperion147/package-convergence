@@ -214,11 +214,12 @@ If the app is already running, Next.js usually picks up the updated package afte
 ## 8. What to verify
 
 - Floating Convergence trigger appears
-- Opening the panel shows the new live preview area
+- Opening the panel shows the bento-style editor drawer
 - Color edits update the test app immediately
-- Light and dark mode tokens export correctly
+- Import accepts existing CSS variables
+- Saved workspaces persist in the browser
 - shadcn surfaces respond to radius, border, and shadow changes
-- Copy export produces usable CSS / Tailwind output
+- Copy export produces usable Tailwind v4 or JSON output
 - Accessibility scores change when contrast changes
 
 ## Useful cleanup commands

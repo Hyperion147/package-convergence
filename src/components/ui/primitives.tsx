@@ -67,6 +67,27 @@ export const Input = forwardRef<
 ));
 Input.displayName = "Input";
 
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, style, ...props }, ref) => (
+  <textarea
+    ref={ref}
+    className={["convergence-scroll-area", className].filter(Boolean).join(" ")}
+    style={mergeStyles(
+      baseControl,
+      {
+        minHeight: "132px",
+        padding: "10px 12px",
+        resize: "vertical",
+      },
+      style,
+    )}
+    {...props}
+  />
+));
+Textarea.displayName = "Textarea";
+
 type ButtonVariant = "default" | "secondary" | "outline" | "ghost";
 type ButtonSize = "sm" | "default" | "icon";
 
@@ -76,7 +97,7 @@ export const Button = forwardRef<
     variant?: ButtonVariant;
     size?: ButtonSize;
   }
->(({ className, variant = "default", size = "default", style, ...props }, ref) => {
+>(({ className, variant = "default", size = "default", style, disabled, ...props }, ref) => {
   const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
     default: {
       backgroundColor: "#fafafa",
@@ -135,11 +156,14 @@ export const Button = forwardRef<
           fontFamily: UI_FONT,
           transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease",
           whiteSpace: "nowrap",
+          opacity: disabled ? 0.45 : 1,
+          pointerEvents: disabled ? "none" : undefined,
         },
         variantStyles[variant],
         sizeStyles[size],
         style,
       )}
+      disabled={disabled}
       {...props}
     />
   );
@@ -267,9 +291,9 @@ export function Card({
     <div
       style={mergeStyles(
         {
-          borderRadius: "10px",
+          borderRadius: "8px",
           border: "1px solid rgba(255,255,255,0.08)",
-          backgroundColor: "#09090b",
+          backgroundColor: "#0f0f12",
           color: "#f4f4f5",
         },
         style,
