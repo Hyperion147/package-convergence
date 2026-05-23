@@ -729,6 +729,11 @@ export function Convergence({
 
         <div
           className="convergence-scroll-area"
+          data-lenis-prevent=""
+          data-lenis-prevent-wheel=""
+          data-lenis-prevent-touch=""
+          onWheelCapture={(event) => event.stopPropagation()}
+          onTouchMoveCapture={(event) => event.stopPropagation()}
           style={{
             padding: "14px",
             overflowY: "auto",

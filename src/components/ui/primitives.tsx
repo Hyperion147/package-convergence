@@ -74,6 +74,11 @@ export const Textarea = forwardRef<
   <textarea
     ref={ref}
     className={["convergence-scroll-area", className].filter(Boolean).join(" ")}
+    data-lenis-prevent=""
+    data-lenis-prevent-wheel=""
+    data-lenis-prevent-touch=""
+    onWheelCapture={(event) => event.stopPropagation()}
+    onTouchMoveCapture={(event) => event.stopPropagation()}
     style={mergeStyles(
       baseControl,
       {

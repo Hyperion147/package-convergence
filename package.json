@@ -1,5 +1,5 @@
 {
-  "name": "convergence-ui",
+  "name": "@Hyperion147/convergence-ui",
   "version": "2.0.0",
   "description": "A headless OKLCH theme engine and React editor for semantic design tokens, Tailwind v4 themes, and modern React apps.",
   "license": "MIT",
@@ -19,7 +19,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "tsc"
+    "lint": "tsc",
+    "ship": "npm publish --access public && npm publish --registry=https://npm.pkg.github.com"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
