@@ -1,5 +1,5 @@
 {
-  "name": "@Hyperion147/convergence-ui",
+  "name": "convergence-ui",
   "version": "2.1.2",
   "description": "A headless OKLCH theme engine and React editor for semantic design tokens, Tailwind v4 themes, and modern React apps.",
   "license": "MIT",
